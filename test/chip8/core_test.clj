@@ -36,9 +36,10 @@
 
 (deftest register-read-write
   (testing "Read and write to an existing register works"
-    (write-reg :V8 0xFF)
+    (write-reg 0x8 0xFF)
+    (write-reg 0xB 0xCC)
     (write-reg :I 0xFFFF)
-    (is (= (byte->ubyte (read-reg :V8)) 0xFF)))
+    (is (= (byte->ubyte (read-reg 0x8)) 0xFF)))
   (testing "I register can store 16 bytes"
     (is (= (short->ushort (read-reg :I)) 0xFFFF))))
 
@@ -72,3 +73,38 @@
   (sp-push 0x2FF)
   (evaluate 0x00EE)
   (is (= (short->ushort (aget PC 0)) 0x2FF)))
+
+(deftest op-2nnn
+  (println (:doc (meta #'opcode-2nnn)))
+  (is (= (short->ushort (aget PC 0)) 0x200))
+  (evaluate 0x2FFF)
+  (is (= (short->ushort (aget PC 0)) 0xFFF))
+  (is (= (short->ushort (aget stack 0)) 0x200)))
+
+(deftest op-3xkk
+  (println (:doc (meta #'opcode-3xkk)))
+  (is (= (short->ushort (aget PC 0)) 0x200))
+  (write-reg 0xB 0xCC)
+  (evaluate 0x3BCC)
+  (is (= (short->ushort (aget PC 0)) (+ 0x200 2))))
+
+(deftest op-4xkk
+  (println (:doc (meta #'opcode-4xkk)))
+  (is (= (short->ushort (aget PC 0)) 0x200))
+  (write-reg 0xB 0xCC)
+  (evaluate 0x4BAA)
+  (is (= (short->ushort (aget PC 0)) (+ 0x200 2))))
+
+(deftest op-5xy0
+  (println (:doc (meta #'opcode-5xy0)))
+  (is (= (short->ushort (aget PC 0)) 0x200))
+  (write-reg 0xA 0xAA)
+  (write-reg 0xB 0xAA)
+  (evaluate 0x5AB0)
+  (is (= (short->ushort (aget PC 0)) (+ 0x200 2))))
+
+(deftest op-6xkk
+  (println (:doc (meta #'opcode-6xkk)))
+  (is (= (byte->ubyte (read-reg 0xA)) 0))
+  (evaluate 0x6ACC)
+  (is (= (byte->ubyte (read-reg 0xA)) 0xCC)))

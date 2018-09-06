@@ -59,20 +59,18 @@
 (defonce PC (short-array 1))
 (defonce SP (byte-array 1))
 
-(defonce reg-map {:V0 0 :V1 1 :V2 2 :V3 3 :V4 4 :V5 5 :V6 6 :V7 7
-                  :V8 8 :V9 9 :VA 0xA :VB 0xB :VC 0xC :VD 0xD :VE 0xE :VF 0xF
-                  :I  0})
-
 (defn read-reg [reg]
   (cond
     (= reg :I) (aget I-register 0)
-    (contains? reg-map reg) (aget Vx-registers (reg reg-map))
+    (and (>= reg 0)
+         (<= reg 0xF)) (aget Vx-registers reg)
     true (throw (Exception. "Undefined register exception"))))
 
 (defn write-reg [reg value]
   (cond
     (= reg :I) (aset-short I-register 0 (unchecked-short value))
-    (contains? reg-map reg) (aset-byte Vx-registers (reg reg-map) (unchecked-byte value))
+    (and (>= reg 0)
+         (<= reg 0xF)) (aset-byte Vx-registers reg (unchecked-byte value))
     true (throw (Exception. "Undefined register exception"))))
 
 (defn sp-push
@@ -137,6 +135,52 @@
   (println "opcode-1nnn")
   (aset-short PC 0 (unchecked-short arg1)))
 
+;; 2nnn - CALL addr
+;; Call subroutine at nnn.
+(defn opcode-2nnn
+  "The interpreter increments the stack pointer, then puts the current PC on the top of the stack.
+  The PC is then set to nnn."
+  [arg1]
+  (println "opcode-2nnn")
+  (sp-push (aget PC 0))
+  (aset-short PC 0 (unchecked-short arg1)))
+
+;; 3xkk - SE Vx, byte
+;; Skip next instruction if Vx = kk.
+(defn opcode-3xkk
+  "The interpreter compares register Vx to kk, and if they are equal, increments the program counter
+  by 2."
+  [arg1 arg2]
+  (println "opcode-3xkk")
+  (when (= (read-reg arg1) (unchecked-byte arg2))
+    (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
+
+;; 4xkk - SNE Vx, byte
+;; Skip next instruction if Vx != kk.
+(defn opcode-4xkk
+  "The interpreter compares register Vx to kk, and if they are not equal, increments the program
+  counter by 2."
+  [arg1 arg2]
+  (println "opcode-4xkk")
+  (when (not= (read-reg arg1) (unchecked-byte arg2))
+    (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
+
+;; 5xy0 - SE Vx, Vy
+;; Skip next instruction if Vx = Vy.
+(defn opcode-5xy0
+  "The interpreter compares register Vx to register Vy, and if they are equal, increments the
+  program counter by 2."
+  [arg1 arg2]
+  (println "opcode-5xy0")
+  (when (= (read-reg arg1) (read-reg arg2))
+    (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
+
+(defn opcode-6xkk
+  "The interpreter puts the value kk into register Vx."
+  [arg1 arg2]
+  (println "opcode-6xkk")
+  (write-reg arg1 (unchecked-byte arg2)))
+
 (defn evaluate
   [opcode]
   (let [opcode-match (vec (format "%04X" opcode))]
@@ -144,5 +188,14 @@
            [\0 \0 \E \0] (opcode-00E0)
            [\0 \0 \E \E] (opcode-00EE)
            [\1  _  _  _] (opcode-1nnn (bit-and opcode 0x0FFF))
+           [\2  _  _  _] (opcode-2nnn (bit-and opcode 0x0FFF))
+           [\3  _  _  _] (opcode-3xkk (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-and opcode 0x00FF))
+           [\4  _  _  _] (opcode-4xkk (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-and opcode 0x00FF))
+           [\5  _  _ \0] (opcode-5xy0 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\6  _  _  _] (opcode-6xkk (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-and opcode 0x00FF))
            ;; and last...
            [\0  _  _  _] (opcode-0nnn))))

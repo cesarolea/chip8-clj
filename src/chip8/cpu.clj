@@ -175,11 +175,20 @@
   (when (= (read-reg arg1) (read-reg arg2))
     (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
 
+;; 6xkk - LD Vx, byte
+;; Set Vx = kk.
 (defn opcode-6xkk
   "The interpreter puts the value kk into register Vx."
   [arg1 arg2]
   (println "opcode-6xkk")
-  (write-reg arg1 (unchecked-byte arg2)))
+  (write-reg arg1 arg2))
+
+;; 7xkk - ADD Vx, byte
+;; Set Vx = Vx + kk.
+(defn opcode-7xkk
+  "Adds the value kk to the value of register Vx, then stores the result in Vx."
+  [arg1 arg2]
+  (write-reg arg1 (+ arg2 (read-reg arg1))))
 
 (defn evaluate
   [opcode]
@@ -196,6 +205,8 @@
            [\5  _  _ \0] (opcode-5xy0 (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\6  _  _  _] (opcode-6xkk (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-and opcode 0x00FF))
+           [\7  _  _  _] (opcode-7xkk (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-and opcode 0x00FF))
            ;; and last...
            [\0  _  _  _] (opcode-0nnn))))

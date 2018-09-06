@@ -108,3 +108,14 @@
   (is (= (byte->ubyte (read-reg 0xA)) 0))
   (evaluate 0x6ACC)
   (is (= (byte->ubyte (read-reg 0xA)) 0xCC)))
+
+(deftest op-7xkk
+  (println (:doc (meta #'opcode-7xkk)))
+  (is (= (byte->ubyte (read-reg 0xA)) 0x0))
+  (write-reg 0xA 0x11)
+  (evaluate 0x7A22)
+  (is (= (byte->ubyte (read-reg 0xA)) 0x33))
+  (reset)
+  (write-reg 0xA 0xBB)
+  (evaluate 0x7ACC)
+  (is (= (byte->ubyte (read-reg 0xA)) 0x87)))

@@ -1,6 +1,13 @@
 (ns chip8.cpu
   (:require [clojure.core.match :refer [match]]))
 
+(defn- num->digits
+  [num]
+  (loop [n num res []]
+    (if (zero? n)
+      res
+      (recur (quot n 10) (cons (mod n 10) res)))))
+
 ;; Memory Map:
 ;; +---------------+= 0xFFF (4095) End of Chip-8 RAM
 ;; |               |
@@ -258,7 +265,9 @@
   "If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
   Then Vx is divided by 2."
   [arg1 arg2]
-  (println "opcode-8xy6"))
+  (println "opcode-8xy6")
+  (write-reg 0xF (bit-and (read-reg arg1) 1))
+  (write-reg arg1 (/ (byte->ubyte (read-reg arg1)) 2)))
 
 ;; 8xy7 - SUBN Vx, Vy
 ;; Set Vx = Vy - Vx, set VF = NOT borrow.
@@ -266,7 +275,12 @@
   "If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
   and the results stored in Vx."
   [arg1 arg2]
-  (println "opcode-8xy7"))
+  (println "opcode-8xy7")
+  (let [vx (byte->ubyte (read-reg arg1))
+        vy (byte->ubyte (read-reg arg2))
+        result (- vy vx)]
+    (write-reg 0xF (if (> vy vx) 1 0))
+    (write-reg arg1 result)))
 
 ;; 8xyE - SHL Vx {, Vy}
 ;; Set Vx = Vx SHL 1.
@@ -377,7 +391,10 @@
 (defn opcode-fx1e
   "The values of I and Vx are added, and the results are stored in I."
   [arg1]
-  (println "opcode-fx1e"))
+  (println "opcode-fx1e")
+  (let [i (short->ushort (read-reg :I))
+        result (+ i (byte->ubyte (read-reg arg1)))]
+    (write-reg :I result)))
 
 ;; Fx29 - LD F, Vx
 ;; Set I = location of sprite for digit Vx.
@@ -394,7 +411,12 @@
   "The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at
   location in I, the tens digit at location I+1, and the ones digit at location I+2."
   [arg1]
-  (println "opcode-fx33"))
+  (println "opcode-fx33")
+  (let [num (byte->ubyte (read-reg arg1))
+        digits (num->digits num)]
+    (write-mem (+ (short->ushort (read-reg :I)) 2) (nth digits 2 0))
+    (write-mem (+ (short->ushort (read-reg :I)) 1) (nth digits 1 0))
+    (write-mem (short->ushort (read-reg :I)) (nth digits 0 0))))
 
 ;; Fx55 - LD [I], Vx
 ;; Store registers V0 through Vx in memory starting at location I.
@@ -402,14 +424,18 @@
   "The interpreter copies the values of registers V0 through Vx into memory, starting at the address
   in I."
   [arg1]
-  (println "opcode-fx55"))
+  (println "opcode-fx55")
+  (doseq [offset (range (inc arg1))]
+    (write-mem (+ (short->ushort (read-reg :I)) offset) (byte->ubyte (read-reg offset)))))
 
 ;; Fx65 - LD Vx, [I]
 ;; Read registers V0 through Vx from memory starting at location I.
 (defn opcode-fx65
   "The interpreter reads values from memory starting at location I into registers V0 through Vx."
   [arg1]
-  (println "opcode-fx65"))
+  (println "opcode-fx65")
+  (doseq [offset (range (inc arg1))]
+    (write-reg offset (byte->ubyte (read-mem (+ (short->ushort (read-reg :I)) offset))))))
 
 (defn evaluate
   [opcode]
@@ -441,10 +467,19 @@
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\8  _  _ \5] (opcode-8xy5 (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\8  _  _ \6] (opcode-8xy6 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\8  _  _ \7] (opcode-8xy7 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\8  _  _ \E] (opcode-8xye (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\9  _  _ \0] (opcode-9xy0 (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
+
+           [\F  _ \1 \E] (opcode-fx1e (bit-shift-right (bit-and opcode 0x0F00) 8))
+           [\F  _ \3 \3] (opcode-fx33 (bit-shift-right (bit-and opcode 0x0F00) 8))
+           [\F  _ \5 \5] (opcode-fx55 (bit-shift-right (bit-and opcode 0x0F00) 8))
+           [\F  _ \6 \5] (opcode-fx65 (bit-shift-right (bit-and opcode 0x0F00) 8))
            [\A  _  _  _] (opcode-annn (bit-and opcode 0x0FFF))
            [\B  _  _  _] (opcode-bnnn (bit-and opcode 0x0FFF))
            [\C  _  _  _] (opcode-cxkk (bit-shift-right (bit-and opcode 0x0F00) 8)

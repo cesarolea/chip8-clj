@@ -99,7 +99,7 @@
   (aset-byte SP 0 0)
   (aset-short PC 0 0x200))
 
-;; opcodes (implement with pattern matching) https://www.youtube.com/watch?v=mi3OtBc73-k
+;; OPCODES
 
 ;; 0nnn - SYS addr
 ;; Jump to a machine code routine at nnn.
@@ -191,6 +191,78 @@
   (println "opcode-7xkk")
   (write-reg arg1 (+ arg2 (read-reg arg1))))
 
+;; 8xy0 - LD Vx, Vy
+;; Set Vx = Vy.
+(defn opcode-8xy0
+  "Stores the value of register Vy in register Vx."
+  [arg1 arg2]
+  (println "opcode-8xy0")
+  (write-reg arg1 (read-reg arg2)))
+
+;; 8xy1 - OR Vx, Vy
+;; Set Vx = Vx OR Vy.
+(defn opcode-8xy1
+  "Performs a bitwise OR on the values of Vx and Vy, then stores the result in Vx.
+  A bitwise OR compares the corresponding bits from two values, and if either bit is 1,
+  then the same bit in the result is also 1. Otherwise, it is 0. "
+  [arg1 arg2]
+  (println "opcode-8xy1")
+  (write-reg arg1 (bit-or (read-reg arg1) (read-reg arg2))))
+
+;; 8xy2 - AND Vx, Vy
+;; Set Vx = Vx AND Vy.
+(defn opcode-8xy2
+  "Performs a bitwise AND on the values of Vx and Vy, then stores the result in Vx.
+  A bitwise AND compares the corresponding bits from two values, and if both bits are 1,
+  then the same bit in the result is also 1. Otherwise, it is 0. "
+  [arg1 arg2]
+  (println "opcode-8xy2")
+  (write-reg arg1 (bit-and (read-reg arg1) (read-reg arg2))))
+
+;; 8xy3 - XOR Vx, Vy
+;; Set Vx = Vx XOR Vy.
+(defn opcode-8xy3
+  "Performs a bitwise exclusive OR on the values of Vx and Vy, then stores the result in Vx.
+  An exclusive OR compares the corresponding bits from two values, and if the bits are not both
+  the same, then the corresponding bit in the result is set to 1. Otherwise, it is 0. "
+  [arg1 arg2]
+  (println "opcode-8xy3")
+  (write-reg arg1 (bit-xor (read-reg arg1) (read-reg arg2))))
+
+;; 8xy4 - ADD Vx, Vy
+;; Set Vx = Vx + Vy, set VF = carry.
+(defn opcode-8xy4
+  "The values of Vx and Vy are added together. If the result is greater than 8 bits (i.e., > 255,)
+  VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx."
+  [arg1 arg2]
+  (println "opcode-8xy4")
+  (let [result (+ (byte->ubyte (read-reg arg1)) (byte->ubyte (read-reg arg2)))]
+    (write-reg 0xF (if (> result 255) 1 0))))
+
+;; 8xy5 - SUB Vx, Vy
+;; Set Vx = Vx - Vy, set VF = NOT borrow.
+(defn opcode-8xy5
+  "If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
+  and the results stored in Vx."
+  [arg1 arg2]
+  (println "opcode-8xy5"))
+
+;; 8xy6 - SHR Vx {, Vy}
+;; Set Vx = Vx SHR 1.
+(defn opcode-8xy6
+  "If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
+  Then Vx is divided by 2."
+  [arg1 arg2]
+  (println "opcode-8xy6"))
+
+;; 8xy7 - SUBN Vx, Vy
+;; Set Vx = Vy - Vx, set VF = NOT borrow.
+(defn opcode-8xy7
+  "If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
+  and the results stored in Vx."
+  [arg1 arg2]
+  (println "opcode-8xy7"))
+
 ;; 8xyE - SHL Vx {, Vy}
 ;; Set Vx = Vx SHL 1.
 (defn opcode-8xye
@@ -240,6 +312,100 @@
     (println "random int" random)
     (write-reg arg1 (bit-and random arg2))))
 
+;; Dxyn - DRW Vx, Vy, nibble
+;; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+(defn opcode-dxyn
+  "The interpreter reads n bytes from memory, starting at the address stored in I.
+  These bytes are then displayed as sprites on screen at coordinates (Vx, Vy).
+  Sprites are XORed onto the existing screen. If this causes any pixels to be erased,
+  VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside
+  the coordinates of the display, it wraps around to the opposite side of the screen."
+  [arg1 arg2 arg3]
+  (println "opcode-dxyn"))
+
+;; Ex9E - SKP Vx
+;; Skip next instruction if key with the value of Vx is pressed.
+(defn opcode-ex9e
+  "Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down
+  position, PC is increased by 2."
+  [arg1]
+  (println "opcode-ex9e"))
+
+;; ExA1 - SKNP Vx
+;; Skip next instruction if key with the value of Vx is not pressed.
+(defn opcode-exa1
+  "Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up
+  position, PC is increased by 2."
+  [arg1]
+  (println "opcode-exa1"))
+
+;; Fx07 - LD Vx, DT
+;; Set Vx = delay timer value.
+(defn opcode-fx07
+  "The value of DT is placed into Vx."
+  [arg1]
+  (println "opcode-fx07"))
+
+;; Fx0A - LD Vx, K
+;; Wait for a key press, store the value of the key in Vx.
+(defn opcode-fx0a
+  "All execution stops until a key is pressed, then the value of that key is stored in Vx."
+  [arg1]
+  (println "opcode-fx0a"))
+
+;; Fx15 - LD DT, Vx
+;; Set delay timer = Vx.
+(defn opcode-fx15
+  "DT is set equal to the value of Vx."
+  [arg1]
+  (println "opcode-fx15"))
+
+;; Fx18 - LD ST, Vx
+;; Set sound timer = Vx.
+(defn opcode-fx18
+  "ST is set equal to the value of Vx."
+  [arg1]
+  (println "opcode-fx18"))
+
+;; Fx1E - ADD I, Vx
+;; Set I = I + Vx.
+(defn opcode-fx1e
+  "The values of I and Vx are added, and the results are stored in I."
+  [arg1]
+  (println "opcode-fx1e"))
+
+;; Fx29 - LD F, Vx
+;; Set I = location of sprite for digit Vx.
+(defn opcode-fx29
+  "The value of I is set to the location for the hexadecimal sprite corresponding to the value of
+  Vx."
+  [arg1]
+  (println "opcode-fx29"))
+
+
+;; Fx33 - LD B, Vx
+;; Store BCD representation of Vx in memory locations I, I+1, and I+2.
+(defn opcode-fx33
+  "The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at
+  location in I, the tens digit at location I+1, and the ones digit at location I+2."
+  [arg1]
+  (println "opcode-fx33"))
+
+;; Fx55 - LD [I], Vx
+;; Store registers V0 through Vx in memory starting at location I.
+(defn opcode-fx55
+  "The interpreter copies the values of registers V0 through Vx into memory, starting at the address
+  in I."
+  [arg1]
+  (println "opcode-fx55"))
+
+;; Fx65 - LD Vx, [I]
+;; Read registers V0 through Vx from memory starting at location I.
+(defn opcode-fx65
+  "The interpreter reads values from memory starting at location I into registers V0 through Vx."
+  [arg1]
+  (println "opcode-fx65"))
+
 (defn evaluate
   [opcode]
   (let [opcode-match (vec (format "%04X" opcode))]
@@ -258,6 +424,16 @@
                                       (bit-and opcode 0x00FF))
            [\7  _  _  _] (opcode-7xkk (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-and opcode 0x00FF))
+           [\8  _  _ \0] (opcode-8xy0 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\8  _  _ \1] (opcode-8xy1 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\8  _  _ \2] (opcode-8xy2 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\8  _  _ \3] (opcode-8xy3 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\8  _  _ \4] (opcode-8xy4 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\8  _  _ \E] (opcode-8xye (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\9  _  _ \0] (opcode-9xy0 (bit-shift-right (bit-and opcode 0x0F00) 8)

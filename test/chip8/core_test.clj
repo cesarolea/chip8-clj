@@ -167,5 +167,57 @@
   (evaluate 0xB201)
   (is (= (short->ushort (aget PC 0)) 0x20B)))
 
-(deftest op-cxkk
-  (println (:doc (meta #'opcode-cxkk))))
+(deftest op-8xy0
+  (println (:doc (meta #'opcode-8xy0)))
+  (write-reg 0xB 0xB)
+  (evaluate 0x8AB0)
+  (is (= (byte->ubyte (read-reg 0xA)) 0xB)))
+
+(deftest op-8xy1
+  (println (:doc (meta #'opcode-8xy1)))
+  (write-reg 0xA 0xAA)
+  (write-reg 0x5 0x55)
+  (evaluate 0x8A51)
+  (is (= (byte->ubyte (read-reg 0xA)) 0xFF))
+  (reset)
+  (write-reg 0xA 0xF0)
+  (write-reg 0x5 0x0F)
+  (evaluate 0x8A51)
+  (is (= (byte->ubyte (read-reg 0xA)) 0xFF)))
+
+(deftest op-8xy2
+  (println (:doc (meta #'opcode-8xy2)))
+  (write-reg 0xA 0xAA)
+  (write-reg 0x5 0x55)
+  (evaluate 0x8A52)
+  (is (= (byte->ubyte (read-reg 0xA)) 0x0))
+  (reset)
+  (write-reg 0xA 0xFF)
+  (write-reg 0x5 0x0F)
+  (evaluate 0x8A52)
+  (is (= (byte->ubyte (read-reg 0xA)) 0x0F)))
+
+(deftest op-8xy3
+  (println (:doc (meta #'opcode-8xy3)))
+  (write-reg 0xA 0xFF)
+  (write-reg 0x5 0xF0)
+  (evaluate 0x8A53)
+  (is (= (byte->ubyte (read-reg 0xA)) 0xF))
+  (reset)
+  (write-reg 0xA 0xAA)
+  (write-reg 0x5 0x55)
+  (evaluate 0x8A53)
+  (is (= (byte->ubyte (read-reg 0xA)) 0xFF)))
+
+(deftest op-8xy4
+  (println (:doc (meta #'opcode-8xy3)))
+  (is (= (byte->ubyte (read-reg 0xF)) 0))
+  (write-reg 0xA 0xFE)
+  (write-reg 0xB 0x1)
+  (evaluate 0x8AB4)
+  (is (= (byte->ubyte (read-reg 0xF)) 0))
+  (reset)
+  (write-reg 0xA 0xFF)
+  (write-reg 0xB 0x1)
+  (evaluate 0x8AB4)
+  (is (= (byte->ubyte (read-reg 0xF)) 1)))

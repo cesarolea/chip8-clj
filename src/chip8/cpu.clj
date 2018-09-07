@@ -188,7 +188,57 @@
 (defn opcode-7xkk
   "Adds the value kk to the value of register Vx, then stores the result in Vx."
   [arg1 arg2]
+  (println "opcode-7xkk")
   (write-reg arg1 (+ arg2 (read-reg arg1))))
+
+;; 8xyE - SHL Vx {, Vy}
+;; Set Vx = Vx SHL 1.
+(defn opcode-8xye
+  "If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
+  Then Vx is multiplied by 2."
+  [arg1 arg2]
+  (println "opcode-8xye")
+  (if (> (bit-and (read-reg arg1) 2r10000000) 0)
+    (write-reg 0xF 1)
+    (write-reg 0xF 0))
+  (write-reg arg1 (* (read-reg arg1) 2)))
+
+;; 9xy0 - SNE Vx, Vy
+;; Skip next instruction if Vx != Vy.
+(defn opcode-9xy0
+  "The values of Vx and Vy are compared, and if they are not equal, the program counter is increased
+  by 2."
+  [arg1 arg2]
+  (println "opcode-9xy0")
+  (when-not (= (read-reg arg1) (read-reg arg2))
+    (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
+
+;; Annn - LD I, addr
+;; Set I = nnn.
+(defn opcode-annn
+  "The value of register I is set to nnn."
+  [arg1]
+  (println "opcode-annn")
+  (write-reg :I arg1))
+
+;; Bnnn - JP V0, addr
+;; Jump to location nnn + V0.
+(defn opcode-bnnn
+  "The program counter is set to nnn plus the value of V0."
+  [arg1]
+  (println "opcode-bnnn")
+  (aset-short PC 0 (unchecked-short (+ arg1 (read-reg 0)))))
+
+;; Cxkk - RND Vx, byte
+;; Set Vx = random byte AND kk.
+(defn opcode-cxkk
+  "The interpreter generates a random number from 0 to 255, which is then ANDed with the value kk.
+  The results are stored in Vx. See instruction 8xy2 for more information on AND."
+  [arg1 arg2]
+  (println "opcode-cxkk")
+  (let [random (rand-int 256)]
+    (println "random int" random)
+    (write-reg arg1 (bit-and random arg2))))
 
 (defn evaluate
   [opcode]
@@ -208,5 +258,14 @@
                                       (bit-and opcode 0x00FF))
            [\7  _  _  _] (opcode-7xkk (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-and opcode 0x00FF))
+           [\8  _  _ \E] (opcode-8xye (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\9  _  _ \0] (opcode-9xy0 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\A  _  _  _] (opcode-annn (bit-and opcode 0x0FFF))
+           [\B  _  _  _] (opcode-bnnn (bit-and opcode 0x0FFF))
+           [\C  _  _  _] (opcode-cxkk (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-and opcode 0x00FF))
+
            ;; and last...
            [\0  _  _  _] (opcode-0nnn))))

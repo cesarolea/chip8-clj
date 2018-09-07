@@ -119,3 +119,53 @@
   (write-reg 0xA 0xBB)
   (evaluate 0x7ACC)
   (is (= (byte->ubyte (read-reg 0xA)) 0x87)))
+
+(deftest op-8xye
+  (println (:doc (meta #'opcode-8xye)))
+  (is (= (byte->ubyte (read-reg 0xF)) 0))
+  (write-reg 0xA 2r10000000)
+  (is (= (byte->ubyte (read-reg 0xA)) 0x80))
+  (evaluate 0x8A0E)
+  (is (= (byte->ubyte (read-reg 0xF)) 1))
+  (is (= (byte->ubyte (read-reg 0xA)) 0))
+  (evaluate 0x8A0E)
+  (is (= (byte->ubyte (read-reg 0xF)) 0))
+  (is (= (byte->ubyte (read-reg 0xA)) 0))
+  (write-reg 0xA 2r10101010)
+  (evaluate 0x8A0E)
+  (is (= (byte->ubyte (read-reg 0xF)) 1))
+  (is (= (byte->ubyte (read-reg 0xA)) 2r01010100)))
+
+(deftest op-9xy0
+  (println (:doc (meta #'opcode-9xy0)))
+  (is (= (short->ushort (aget PC 0)) 0x200))
+  (write-reg 0xA 0xA)
+  (write-reg 0xB 0xB)
+  (evaluate 0x9AB0)
+  (is (= (short->ushort (aget PC 0)) (+ 0x200 2)))
+  (reset)
+  (write-reg 0xA 0xA)
+  (write-reg 0xB 0xA)
+  (evaluate 0x9AB0)
+  (is (= (short->ushort (aget PC 0)) 0x200)))
+
+(deftest op-annn
+  (println (:doc (meta #'opcode-annn)))
+  (is (= (short->ushort (read-reg :I)) 0))
+  (evaluate 0xAFEA)
+  (is (= (short->ushort (read-reg :I)) 0xFEA)))
+
+(deftest op-bnnn
+  (println (:doc (meta #'opcode-bnnn)))
+  (is (= (short->ushort (aget PC 0)) 0x200))
+  (write-reg 0 1)
+  (evaluate 0xB201)
+  (is (= (short->ushort (aget PC 0)) 0x202))
+  (reset)
+  (aset-short PC 0 (unchecked-short 0xFDFD))
+  (write-reg 0 0xA)
+  (evaluate 0xB201)
+  (is (= (short->ushort (aget PC 0)) 0x20B)))
+
+(deftest op-cxkk
+  (println (:doc (meta #'opcode-cxkk))))

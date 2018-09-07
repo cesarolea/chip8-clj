@@ -245,7 +245,12 @@
   "If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
   and the results stored in Vx."
   [arg1 arg2]
-  (println "opcode-8xy5"))
+  (println "opcode-8xy5")
+  (let [vx (byte->ubyte (read-reg arg1))
+        vy (byte->ubyte (read-reg arg2))
+        result (- vx vy)]
+    (write-reg 0xF (if (> vx vy) 1 0))
+    (write-reg arg1 result)))
 
 ;; 8xy6 - SHR Vx {, Vy}
 ;; Set Vx = Vx SHR 1.
@@ -433,6 +438,8 @@
            [\8  _  _ \3] (opcode-8xy3 (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\8  _  _ \4] (opcode-8xy4 (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4))
+           [\8  _  _ \5] (opcode-8xy5 (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\8  _  _ \E] (opcode-8xye (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))

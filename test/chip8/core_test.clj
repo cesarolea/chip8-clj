@@ -210,7 +210,7 @@
   (is (= (byte->ubyte (read-reg 0xA)) 0xFF)))
 
 (deftest op-8xy4
-  (println (:doc (meta #'opcode-8xy3)))
+  (println (:doc (meta #'opcode-8xy4)))
   (is (= (byte->ubyte (read-reg 0xF)) 0))
   (write-reg 0xA 0xFE)
   (write-reg 0xB 0x1)
@@ -221,3 +221,20 @@
   (write-reg 0xB 0x1)
   (evaluate 0x8AB4)
   (is (= (byte->ubyte (read-reg 0xF)) 1)))
+
+(deftest op-8xy5
+  (println (:doc (meta #'opcode-8xy5)))
+  (is (= (byte->ubyte (read-reg 0xF)) 0))
+  (write-reg 1 0xA)
+  (write-reg 2 2)
+  (evaluate 0x8125)
+  (testing "VF is set to 1 when Vx > Vy"
+    (is (= (byte->ubyte (read-reg 0xF)) 1)))
+  (testing "Vx = Vx - Vy"
+    (is (= (byte->ubyte (read-reg 0x1)) 8)))
+  (reset)
+  (write-reg 1 1)
+  (write-reg 2 2)
+  (evaluate 0x8125)
+  (is (= (byte->ubyte (read-reg 0xF)) 0))
+  (is (= (byte->ubyte (read-reg 0x1)) 0xFF)))

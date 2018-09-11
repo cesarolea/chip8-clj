@@ -33,6 +33,28 @@
 ;; +---------------+= 0x000 (0) Start of Chip-8 RAM
 (defonce memory (byte-array 4096))
 
+;; Programs may also refer to a group of sprites representing the hexadecimal
+;; digits 0 through F. These sprites are 5 bytes long, or 8x5 pixels.
+;; The data should be stored in the interpreter area of Chip-8 memory
+;; (0x000 to 0x1FF).
+(defonce font-sprites  [0xF0 0x90 0x90 0x90 0xF0 ;; 0
+                        0x20 0x60 0x20 0x20 0x70 ;; 1
+                        0xF0 0x10 0xF0 0x80 0xF0 ;; 2
+                        0xF0 0x10 0xF0 0x10 0xF0 ;; 3
+                        0x90 0x90 0xF0 0x10 0x10 ;; 4
+                        0xF0 0x80 0xF0 0x10 0xF0 ;; 5
+                        0xF0 0x80 0xF0 0x90 0xF0 ;; 6
+                        0xF0 0x10 0x20 0x40 0x40 ;; 7
+                        0xF0 0x90 0xF0 0x90 0xF0 ;; 8
+                        0xF0 0x90 0xF0 0x10 0xF0 ;; 9
+                        0xF0 0x90 0xF0 0x90 0x90 ;; A
+                        0xE0 0x90 0xE0 0x90 0xE0 ;; B
+                        0xF0 0x80 0x80 0x80 0xF0 ;; C
+                        0xE0 0x90 0x90 0x90 0xE0 ;; D
+                        0xF0 0x80 0xF0 0x80 0xF0 ;; E
+                        0xF0 0x80 0xF0 0x80 0x80 ;; F
+                        ])
+
 ;; The stack is an array of 16 16-bit values, used to store the address that the interpreter shoud
 ;; return to when finished with a subroutine. Chip-8 allows for up to 16 levels of nested subroutines.
 (defonce stack (short-array 16))
@@ -52,6 +74,13 @@
   "Writes a value to memory as an unchecked byte"
   [addr value]
   (aset-byte memory addr (unchecked-byte value)))
+
+(defn- init-fonts [font-sprites idx]
+  (loop [idx 0
+         sprite (get font-sprites idx)]
+    (when (< idx (count font-sprites))
+      (write-mem idx sprite)
+      (recur (inc idx) (get font-sprites (inc idx))))))
 
 ;; Chip-8 has 16 general purpose 8-bit registers, usually referred to as Vx, where x is a hexadecimal
 ;; digit (0 through F). There is also a 16-bit register called I. This register is generally used to
@@ -102,6 +131,7 @@
     (aset-byte stack addr (unchecked-byte 0)))
   (doseq [addr (range 16)]
     (aset-byte Vx-registers addr 0))
+  (init-fonts font-sprites 0)
   (aset-short I-register 0 0)
   (aset-byte SP 0 0)
   (aset-short PC 0 0x200))

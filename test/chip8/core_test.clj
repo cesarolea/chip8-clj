@@ -22,9 +22,10 @@
     (is (and (= (-> 0xFF unchecked-byte byte->ubyte) 255)
              (= (type (-> 0xFF unchecked-byte byte->ubyte)) java.lang.Long)))))
 
-(deftest memory-initialize
-  (testing "Memory is initialized to 0"
-    (is (= (reduce + memory) 0))))
+(deftest fonts
+  (testing "Font sprites are initialized"
+    (is (= (byte->ubyte (read-mem 0)) 0xF0))
+    (is (= (byte->ubyte (read-mem 0x4F)) 0x80))))
 
 (deftest memory-read-write
   (testing "Reads and Writes works as expected"

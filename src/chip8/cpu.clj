@@ -59,6 +59,16 @@
 ;; return to when finished with a subroutine. Chip-8 allows for up to 16 levels of nested subroutines.
 (defonce stack (short-array 16))
 
+;; The original implementation of the Chip-8 language used a 64x32-pixel monochrome display with
+;; this format:
+;; (0,0)	(63,0)
+;; (0,31)	(63,31)
+(defonce framebuffer
+  (object-array
+   (reduce (fn [fb _]
+             (conj fb (vec (repeat 64 (boolean-array [false false])))))
+           [] (range 32))))
+
 (defn byte->ubyte [byte]
   (bit-and byte 0xFF))
 

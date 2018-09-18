@@ -63,11 +63,48 @@
 ;; this format:
 ;; (0,0)	(63,0)
 ;; (0,31)	(63,31)
-(defonce framebuffer
-  (object-array
-   (reduce (fn [fb _]
-             (conj fb (vec (repeat 64 (boolean-array [false false])))))
-           [] (range 32))))
+(defonce framebuffer (object-array [(byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)
+                                    (byte-array 8)]))
+
+(defn write-fb [x y val]
+  (let [x1 (/ x 8)
+        x2 (inc x1)
+        v1 (bit-shift-right val (mod x 8))
+        v2 (bit-shift-left val (- 8 (mod x 8)))
+        y1 (get framebuffer y)]
+    (aset-byte y1 x1 (unchecked-byte v1))
+    (aset-byte y1 x2 (unchecked-byte v2))
+    (aset framebuffer y y1)))
 
 (defn byte->ubyte [byte]
   (bit-and byte 0xFF))
@@ -141,6 +178,8 @@
     (aset-byte stack addr (unchecked-byte 0)))
   (doseq [addr (range 16)]
     (aset-byte Vx-registers addr 0))
+  (doseq [row (range 32)]
+    (aset framebuffer row (byte-array 8)))
   (init-fonts font-sprites 0)
   (aset-short I-register 0 0)
   (aset-byte SP 0 0)
@@ -162,7 +201,7 @@
   "Clear the display. "
   []
   (println "opcode-00E0")
-  (doseq [addr (range 511)]
+  (doseq [addr (range 0x81)]
     (write-mem addr 0)))
 
 ;; 00EE - RET
@@ -380,7 +419,14 @@
   VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside
   the coordinates of the display, it wraps around to the opposite side of the screen."
   [arg1 arg2 arg3]
-  (println "opcode-dxyn"))
+  (println "opcode-dxyn")
+  (let [mem-bytes
+        (reduce (fn [n-bytes iter]
+                  (conj n-bytes (read-mem (+ (short->ushort (read-reg :I))
+                                             iter))))
+                [] (range arg3))]
+
+    mem-bytes))
 
 ;; Ex9E - SKP Vx
 ;; Skip next instruction if key with the value of Vx is pressed.

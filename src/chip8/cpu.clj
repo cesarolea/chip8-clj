@@ -82,16 +82,16 @@
           v2 (bit-shift-left sprite (- 8 (mod x 8)))]
       (doseq [row (if overflow-y (range y 32) (range y (+ y n)))]
         (let [y1 (get framebuffer row)]
-          (aset-byte y1 x1 (unchecked-byte v1))
+          (aset-byte y1 x1 (unchecked-byte (bit-or (aget y1 x1) v1)))
           (when (and (< x2 8)
                      (> (mod x 8) 0))
-            (aset-byte y1 x2 (unchecked-byte v2)))
+            (aset-byte y1 x2 (unchecked-byte (bit-or (aget y1 x2) v2))))
           (aset framebuffer row y1)))
       (when overflow-y
         (doseq [row (range (- n (count (range y 32))))]
           (let [y1 (get framebuffer row)]
-            (aset-byte y1 x1 (unchecked-byte v1))
-            (aset-byte y1 x2 (unchecked-byte v2))
+            (aset-byte y1 x1 (unchecked-byte (bit-or (aget y1 x1) v1)))
+            (aset-byte y1 x2 (unchecked-byte (bit-or (aget y1 x2) v2)))
             (aset framebuffer row y1)))))))
 
 (defn byte->ubyte [byte]

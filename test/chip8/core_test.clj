@@ -57,7 +57,7 @@
 
 (deftest op-00E0
   (println (:doc (meta #'opcode-00E0)))
-  (write-mem 0x80 19)
+  (write-fb 0 0 1 0xFF)
   (is (= (read-mem 0x80) 19))
   (evaluate 0x00E0)
   (is (= (read-mem 0x80) 0)))

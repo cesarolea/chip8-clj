@@ -8,7 +8,7 @@
 
 (defn stop [] (s/stop screen))
 
-(defn clear [] (s/clear screen))
+(defn clear [] (s/clear screen) (s/redraw screen))
 
 (defn- bits [n s]
   (take s

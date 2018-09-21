@@ -72,15 +72,24 @@
                                     (byte-array 8) (byte-array 8) (byte-array 8) (byte-array 8)
                                     (byte-array 8) (byte-array 8) (byte-array 8) (byte-array 8)]))
 
-(defn write-fb [x y val]
-  (let [x1 (/ x 8)
-        x2 (inc x1)
-        v1 (bit-shift-right val (mod x 8))
-        v2 (bit-shift-left val (- 8 (mod x 8)))
-        y1 (get framebuffer y)]
-    (aset-byte y1 x1 (unchecked-byte v1))
-    (aset-byte y1 x2 (unchecked-byte v2))
-    (aset framebuffer y y1)))
+(defn write-fb [x y n sprite]
+  (let [overflow-x (> x (- 64 8))
+        overflow-y (> (+ y n) (- 32 8))
+        x1 (/ x 8)
+        x2 (if overflow-x 0 (inc x1))
+        v1 (bit-shift-right sprite (mod x 8))
+        v2 (bit-shift-left sprite (- 8 (mod x 8)))]
+    (doseq [row (if overflow-y (range y 32) (range y (+ y n)))]
+      (let [y1 (get framebuffer row)]
+        (aset-byte y1 x1 (unchecked-byte v1))
+        (aset-byte y1 x2 (unchecked-byte v2))
+        (aset framebuffer row y1)))
+    (when overflow-y
+      (doseq [row (range (- n (count (range y 32))))]
+        (let [y1 (get framebuffer row)]
+          (aset-byte y1 x1 (unchecked-byte v1))
+          (aset-byte y1 x2 (unchecked-byte v2))
+          (aset framebuffer row y1))))))
 
 (defn byte->ubyte [byte]
   (bit-and byte 0xFF))
@@ -388,6 +397,9 @@
 
 ;; Dxyn - DRW Vx, Vy, nibble
 ;; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+;; A better explanation of this is:
+;; Draw sprite in location Ireg to coordinate Vreg(x) and Vreg(y)
+;; Draws N lines of the sprite.
 (defn opcode-dxyn
   "The interpreter reads n bytes from memory, starting at the address stored in I.
   These bytes are then displayed as sprites on screen at coordinates (Vx, Vy).

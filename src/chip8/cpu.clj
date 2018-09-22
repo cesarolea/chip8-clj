@@ -72,13 +72,14 @@
                                     (byte-array 8) (byte-array 8) (byte-array 8) (byte-array 8)
                                     (byte-array 8) (byte-array 8) (byte-array 8) (byte-array 8)]))
 
-(defn- bits [n s]
-  (reverse (take s
-                 (map
-                  (fn [i] (bit-and 0x01 i))
-                  (iterate
-                   (fn [i] (bit-shift-right i 1))
-                   n)))))
+(defn bits [n s]
+  (reverse
+   (take s
+         (map
+          (fn [i] (bit-and 0x01 i))
+          (iterate
+           (fn [i] (bit-shift-right i 1))
+           n)))))
 
 (defn read-fb
   "Read a sprite (8 bits) from the framebuffer"
@@ -93,8 +94,25 @@
         v2 (bit-shift-right val-x2 (- 8 (mod x 8)))]
     (bit-or v1 v2)))
 
+(defn check-set-vf!
+  "Checks if sprite causes any pixel to be turned off. If true, VF is set to 1."
+  [x y sprite]
+  (let [fb-val (read-fb x y)]
+    (when
+        (some true?
+              (map (fn [bit-sprite bit-fb]
+                     ;; check if bit-sprite causes bit-fb to be set to 0 when applied xor
+                     ;; if true, set VF to 1
+                     (and (= bit-fb 1)  ;; if fb bit was 1
+                          (= (bit-xor bit-sprite bit-fb) 0) ;; and is turned off
+                          )) (bits sprite 8) (bits fb-val 8)))
+      (write-reg 0xF 1))))
+
 (defn write-fb [x y n sprite]
   (when (> n 0)
+    ;; set the VF register to 0 by default
+    (write-reg 0xF 0)
+    ;; write to the FB, overflows if necessary
     (let [overflow-x (> x (- 64 8))
           overflow-y (>= (+ y (dec n)) 32)
           x1 (/ x 8)
@@ -102,20 +120,18 @@
           v1 (bit-shift-right sprite (mod x 8))
           v2 (bit-shift-left sprite (- 8 (mod x 8)))]
       (doseq [row (if overflow-y (range y 32) (range y (+ y n)))]
-        (let [y1 (get framebuffer row)
-              fb-val (read-fb x row)]
+        (let [y1 (get framebuffer row)]
+          (check-set-vf! x row sprite)
           (aset-byte y1 x1 (unchecked-byte (bit-xor (aget y1 x1) v1)))
           (when (and (< x2 8)
                      (> (mod x 8) 0))
-            (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2))))
-          (aset framebuffer row y1)))
+            (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2))))))
       (when overflow-y
         (doseq [row (range (- n (count (range y 32))))]
-          (let [y1 (get framebuffer row)
-                fb-val (read-fb x row)]
+          (let [y1 (get framebuffer row)]
+            (check-set-vf! x row sprite)
             (aset-byte y1 x1 (unchecked-byte (bit-xor (aget y1 x1) v1)))
-            (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2)))
-            (aset framebuffer row y1)))))))
+            (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2)))))))))
 
 (defn byte->ubyte [byte]
   (bit-and byte 0xFF))

@@ -10,14 +10,6 @@
 
 (defn clear [] (s/clear screen) (s/redraw screen))
 
-(defn- bits [n s]
-  (take s
-       (map
-         (fn [i] (bit-and 0x01 i))
-         (iterate
-           (fn [i] (bit-shift-right i 1))
-           n))))
-
 (defn draw-screen
   [framebuffer]
   ;; the framebuffer is an array of byte arrays. Each byte array has 8 bytes, meaning a single
@@ -27,7 +19,7 @@
       (let [sprite-array (aget framebuffer y)
             row (flatten
                  (reduce (fn [acc itm]
-                           (conj acc (into [] (reverse (bits itm 8)))))
+                           (conj acc (into [] (cpu/bits itm 8))))
                          [] (into [] sprite-array)))]
         (loop [x 0]
           (when (<= x 63)

@@ -72,6 +72,27 @@
                                     (byte-array 8) (byte-array 8) (byte-array 8) (byte-array 8)
                                     (byte-array 8) (byte-array 8) (byte-array 8) (byte-array 8)]))
 
+(defn- bits [n s]
+  (reverse (take s
+                 (map
+                  (fn [i] (bit-and 0x01 i))
+                  (iterate
+                   (fn [i] (bit-shift-right i 1))
+                   n)))))
+
+(defn read-fb
+  "Read a sprite (8 bits) from the framebuffer"
+  [x y]
+  (let [overflow-x (> x (- 64 8))
+        row (get framebuffer y)
+        x1 (/ x 8)
+        x2 (if overflow-x 0 (inc x1))
+        val-x1 (aget row x1)
+        val-x2 (aget row x2)
+        v1 (bit-shift-left val-x1 (mod x 8))
+        v2 (bit-shift-right val-x2 (- 8 (mod x 8)))]
+    (bit-or v1 v2)))
+
 (defn write-fb [x y n sprite]
   (when (> n 0)
     (let [overflow-x (> x (- 64 8))

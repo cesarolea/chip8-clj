@@ -131,6 +131,13 @@
          (<= reg 0xF)) (aset-byte Vx-registers reg (unchecked-byte value))
     true (throw (Exception. "Undefined register exception"))))
 
+(defn- inc-PC
+  "Increment PC by n"
+  ([n]
+   (aset-short PC 0 (unchecked-short (+ (aget PC 0) n))))
+  ([]
+   (inc-PC 2)))
+
 ;;;;;;;;;;;;;;;;;;;;
 ;; DISPLAY FUNCTIONS
 ;;;;;;;;;;;;;;;;;;;;
@@ -221,7 +228,9 @@
   (aset-byte SP 0 0)
   (aset-short PC 0 0x200))
 
+;;;;;;;;;;;
 ;; OPCODES
+;;;;;;;;;;;
 
 ;; 0nnn - SYS addr
 ;; Jump to a machine code routine at nnn.
@@ -238,7 +247,8 @@
   []
   (println "opcode-00E0")
   (doseq [row (range 32)]
-    (aset framebuffer row (byte-array 8))))
+    (aset framebuffer row (byte-array 8)))
+  (inc-PC))
 
 ;; 00EE - RET
 ;; Return from a subroutine.
@@ -303,7 +313,8 @@
   "The interpreter puts the value kk into register Vx."
   [arg1 arg2]
   (println "opcode-6xkk")
-  (write-reg arg1 arg2))
+  (write-reg arg1 arg2)
+  (inc-PC))
 
 ;; 7xkk - ADD Vx, byte
 ;; Set Vx = Vx + kk.
@@ -311,7 +322,8 @@
   "Adds the value kk to the value of register Vx, then stores the result in Vx."
   [arg1 arg2]
   (println "opcode-7xkk")
-  (write-reg arg1 (+ arg2 (read-reg arg1))))
+  (write-reg arg1 (+ arg2 (read-reg arg1)))
+  (inc-PC))
 
 ;; 8xy0 - LD Vx, Vy
 ;; Set Vx = Vy.
@@ -319,7 +331,8 @@
   "Stores the value of register Vy in register Vx."
   [arg1 arg2]
   (println "opcode-8xy0")
-  (write-reg arg1 (read-reg arg2)))
+  (write-reg arg1 (read-reg arg2))
+  (inc-PC))
 
 ;; 8xy1 - OR Vx, Vy
 ;; Set Vx = Vx OR Vy.
@@ -329,7 +342,8 @@
   then the same bit in the result is also 1. Otherwise, it is 0. "
   [arg1 arg2]
   (println "opcode-8xy1")
-  (write-reg arg1 (bit-or (read-reg arg1) (read-reg arg2))))
+  (write-reg arg1 (bit-or (read-reg arg1) (read-reg arg2)))
+  (inc-PC))
 
 ;; 8xy2 - AND Vx, Vy
 ;; Set Vx = Vx AND Vy.
@@ -339,7 +353,8 @@
   then the same bit in the result is also 1. Otherwise, it is 0. "
   [arg1 arg2]
   (println "opcode-8xy2")
-  (write-reg arg1 (bit-and (read-reg arg1) (read-reg arg2))))
+  (write-reg arg1 (bit-and (read-reg arg1) (read-reg arg2)))
+  (inc-PC))
 
 ;; 8xy3 - XOR Vx, Vy
 ;; Set Vx = Vx XOR Vy.
@@ -349,7 +364,8 @@
   the same, then the corresponding bit in the result is set to 1. Otherwise, it is 0. "
   [arg1 arg2]
   (println "opcode-8xy3")
-  (write-reg arg1 (bit-xor (read-reg arg1) (read-reg arg2))))
+  (write-reg arg1 (bit-xor (read-reg arg1) (read-reg arg2)))
+  (inc-PC))
 
 ;; 8xy4 - ADD Vx, Vy
 ;; Set Vx = Vx + Vy, set VF = carry.
@@ -359,7 +375,8 @@
   [arg1 arg2]
   (println "opcode-8xy4")
   (let [result (+ (byte->ubyte (read-reg arg1)) (byte->ubyte (read-reg arg2)))]
-    (write-reg 0xF (if (> result 255) 1 0))))
+    (write-reg 0xF (if (> result 255) 1 0))
+    (inc-PC)))
 
 ;; 8xy5 - SUB Vx, Vy
 ;; Set Vx = Vx - Vy, set VF = NOT borrow.
@@ -372,7 +389,8 @@
         vy (byte->ubyte (read-reg arg2))
         result (- vx vy)]
     (write-reg 0xF (if (> vx vy) 1 0))
-    (write-reg arg1 result)))
+    (write-reg arg1 result)
+    (inc-PC)))
 
 ;; 8xy6 - SHR Vx {, Vy}
 ;; Set Vx = Vx SHR 1.
@@ -382,7 +400,8 @@
   [arg1 arg2]
   (println "opcode-8xy6")
   (write-reg 0xF (bit-and (read-reg arg1) 1))
-  (write-reg arg1 (/ (byte->ubyte (read-reg arg1)) 2)))
+  (write-reg arg1 (/ (byte->ubyte (read-reg arg1)) 2))
+  (inc-PC))
 
 ;; 8xy7 - SUBN Vx, Vy
 ;; Set Vx = Vy - Vx, set VF = NOT borrow.
@@ -395,7 +414,8 @@
         vy (byte->ubyte (read-reg arg2))
         result (- vy vx)]
     (write-reg 0xF (if (> vy vx) 1 0))
-    (write-reg arg1 result)))
+    (write-reg arg1 result)
+    (inc-PC)))
 
 ;; 8xyE - SHL Vx {, Vy}
 ;; Set Vx = Vx SHL 1.
@@ -407,7 +427,8 @@
   (if (> (bit-and (read-reg arg1) 2r10000000) 0)
     (write-reg 0xF 1)
     (write-reg 0xF 0))
-  (write-reg arg1 (* (read-reg arg1) 2)))
+  (write-reg arg1 (* (read-reg arg1) 2))
+  (inc-PC))
 
 ;; 9xy0 - SNE Vx, Vy
 ;; Skip next instruction if Vx != Vy.
@@ -425,7 +446,8 @@
   "The value of register I is set to nnn."
   [arg1]
   (println "opcode-annn")
-  (write-reg :I arg1))
+  (write-reg :I arg1)
+  (inc-PC))
 
 ;; Bnnn - JP V0, addr
 ;; Jump to location nnn + V0.
@@ -444,7 +466,8 @@
   (println "opcode-cxkk")
   (let [random (rand-int 256)]
     (println "random int" random)
-    (write-reg arg1 (bit-and random arg2))))
+    (write-reg arg1 (bit-and random arg2))
+    (inc-PC)))
 
 ;; Dxyn - DRW Vx, Vy, nibble
 ;; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
@@ -467,7 +490,8 @@
                   (conj n-bytes (read-mem (+ (short->ushort (read-reg :I))
                                              iter))))
                 [] (range arg3))]
-    (write-fb (read-reg arg1) (read-reg arg2) mem-bytes)))
+    (write-fb (read-reg arg1) (read-reg arg2) mem-bytes)
+    (inc-PC)))
 
 ;; Ex9E - SKP Vx
 ;; Skip next instruction if key with the value of Vx is pressed.
@@ -490,7 +514,8 @@
 (defn opcode-fx07
   "The value of DT is placed into Vx."
   [arg1]
-  (println "opcode-fx07"))
+  (println "opcode-fx07")
+  (inc-PC))
 
 ;; Fx0A - LD Vx, K
 ;; Wait for a key press, store the value of the key in Vx.
@@ -504,14 +529,16 @@
 (defn opcode-fx15
   "DT is set equal to the value of Vx."
   [arg1]
-  (println "opcode-fx15"))
+  (println "opcode-fx15")
+  (inc-PC))
 
 ;; Fx18 - LD ST, Vx
 ;; Set sound timer = Vx.
 (defn opcode-fx18
   "ST is set equal to the value of Vx."
   [arg1]
-  (println "opcode-fx18"))
+  (println "opcode-fx18")
+  (inc-PC))
 
 ;; Fx1E - ADD I, Vx
 ;; Set I = I + Vx.
@@ -521,7 +548,8 @@
   (println "opcode-fx1e")
   (let [i (short->ushort (read-reg :I))
         result (+ i (byte->ubyte (read-reg arg1)))]
-    (write-reg :I result)))
+    (write-reg :I result)
+    (inc-PC)))
 
 ;; Fx29 - LD F, Vx
 ;; Set I = location of sprite for digit Vx.
@@ -529,7 +557,8 @@
   "The value of I is set to the location for the hexadecimal sprite corresponding to the value of
   Vx."
   [arg1]
-  (println "opcode-fx29"))
+  (println "opcode-fx29")
+  (inc-PC))
 
 
 ;; Fx33 - LD B, Vx
@@ -543,7 +572,8 @@
         digits (num->digits num)]
     (write-mem (+ (short->ushort (read-reg :I)) 2) (nth digits 2 0))
     (write-mem (+ (short->ushort (read-reg :I)) 1) (nth digits 1 0))
-    (write-mem (short->ushort (read-reg :I)) (nth digits 0 0))))
+    (write-mem (short->ushort (read-reg :I)) (nth digits 0 0))
+    (inc-PC)))
 
 ;; Fx55 - LD [I], Vx
 ;; Store registers V0 through Vx in memory starting at location I.
@@ -553,7 +583,8 @@
   [arg1]
   (println "opcode-fx55")
   (doseq [offset (range (inc arg1))]
-    (write-mem (+ (short->ushort (read-reg :I)) offset) (byte->ubyte (read-reg offset)))))
+    (write-mem (+ (short->ushort (read-reg :I)) offset) (byte->ubyte (read-reg offset))))
+  (inc-PC))
 
 ;; Fx65 - LD Vx, [I]
 ;; Read registers V0 through Vx from memory starting at location I.
@@ -562,7 +593,8 @@
   [arg1]
   (println "opcode-fx65")
   (doseq [offset (range (inc arg1))]
-    (write-reg offset (byte->ubyte (read-mem (+ (short->ushort (read-reg :I)) offset))))))
+    (write-reg offset (byte->ubyte (read-mem (+ (short->ushort (read-reg :I)) offset)))))
+  (inc-PC))
 
 (defn evaluate
   [opcode]

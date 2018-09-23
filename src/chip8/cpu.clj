@@ -89,10 +89,11 @@
         x1 (/ x 8)
         x2 (if overflow-x 0 (inc x1))
         val-x1 (aget row x1)
-        val-x2 (aget row x2)
+        val-x2 (when (< x2 8) (aget row x2))
         v1 (bit-shift-left val-x1 (mod x 8))
-        v2 (bit-shift-right val-x2 (- 8 (mod x 8)))]
-    (bit-or v1 v2)))
+        v2 (when val-x2 (bit-shift-right val-x2 (- 8 (mod x 8))))]
+    (if v2
+      (bit-or v1 v2) v1)))
 
 (defn check-set-vf!
   "Checks if sprite causes any pixel to be turned off. If true, VF is set to 1."
@@ -108,30 +109,29 @@
                           )) (bits sprite 8) (bits fb-val 8)))
       (write-reg 0xF 1))))
 
-(defn write-fb [x y n sprite]
-  (when (> n 0)
-    ;; set the VF register to 0 by default
-    (write-reg 0xF 0)
-    ;; write to the FB, overflows if necessary
-    (let [overflow-x (> x (- 64 8))
-          overflow-y (>= (+ y (dec n)) 32)
-          x1 (/ x 8)
-          x2 (if overflow-x 0 (inc x1))
-          v1 (bit-shift-right sprite (mod x 8))
-          v2 (bit-shift-left sprite (- 8 (mod x 8)))]
-      (doseq [row (if overflow-y (range y 32) (range y (+ y n)))]
-        (let [y1 (get framebuffer row)]
+(defn write-fb [x y sprites]
+  (let [n (count sprites)] ;; n is the amount of rows to display
+    (loop [iter 0]
+      (when (< iter n)
+        ;; set the VF register to 0 by default
+        (write-reg 0xF 0)
+
+        (let [sprite (nth sprites iter)
+              overflow-x (> x (- 64 8))
+              overflow-y (>= (+ y iter) 32)
+              x1 (/ x 8)
+              x2 (if overflow-x 0 (inc x1))
+              v1 (bit-shift-right sprite (mod x 8))
+              v2 (bit-shift-left sprite (- 8 (mod x 8)))
+              row (if overflow-y (- 32 (+ y iter)) (+ y iter))
+              y1 (get framebuffer row)]
+          (println "Row: " row " overflow-y " overflow-y " iteration " iter " n " n)
           (check-set-vf! x row sprite)
           (aset-byte y1 x1 (unchecked-byte (bit-xor (aget y1 x1) v1)))
           (when (and (< x2 8)
                      (> (mod x 8) 0))
-            (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2))))))
-      (when overflow-y
-        (doseq [row (range (- n (count (range y 32))))]
-          (let [y1 (get framebuffer row)]
-            (check-set-vf! x row sprite)
-            (aset-byte y1 x1 (unchecked-byte (bit-xor (aget y1 x1) v1)))
-            (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2)))))))))
+            (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2)))))
+        (recur (inc iter))))))
 
 (defn byte->ubyte [byte]
   (bit-and byte 0xFF))
@@ -440,8 +440,11 @@
 ;; Dxyn - DRW Vx, Vy, nibble
 ;; Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
 ;; A better explanation of this is:
-;; Draw sprite in location Ireg to coordinate Vreg(x) and Vreg(y)
-;; Draws N lines of the sprite.
+;; Draws a sprite at coordinate (VX, VY) that has a width of 8 pixels and a height of N pixels.
+;; Each row of 8 pixels is read as bit-coded (with the most significant bit of each byte displayed
+;; on the left) starting from memory location I; I value doesn't change after the execution of this
+;; instruction. As described above, VF is set to 1 if any screen pixels are flipped from set to
+;; unset when the sprite is drawn, and to 0 if that doesn't happen.
 (defn opcode-dxyn
   "The interpreter reads n bytes from memory, starting at the address stored in I.
   These bytes are then displayed as sprites on screen at coordinates (Vx, Vy).

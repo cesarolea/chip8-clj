@@ -111,27 +111,27 @@
 
 (defn write-fb [x y sprites]
   (let [n (count sprites)] ;; n is the amount of rows to display
-    (loop [iter 0]
-      (when (< iter n)
-        ;; set the VF register to 0 by default
-        (write-reg 0xF 0)
+    (when (> n 0)
+      ;; set the VF register to 0 by default
+      (write-reg 0xF 0)
 
-        (let [sprite (nth sprites iter)
-              overflow-x (> x (- 64 8))
-              overflow-y (>= (+ y iter) 32)
-              x1 (/ x 8)
-              x2 (if overflow-x 0 (inc x1))
-              v1 (bit-shift-right sprite (mod x 8))
-              v2 (bit-shift-left sprite (- 8 (mod x 8)))
-              row (if overflow-y (- 32 (+ y iter)) (+ y iter))
-              y1 (get framebuffer row)]
-          (println "Row: " row " overflow-y " overflow-y " iteration " iter " n " n)
-          (check-set-vf! x row sprite)
-          (aset-byte y1 x1 (unchecked-byte (bit-xor (aget y1 x1) v1)))
-          (when (and (< x2 8)
-                     (> (mod x 8) 0))
-            (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2)))))
-        (recur (inc iter))))))
+      (loop [iter 0]
+        (when (< iter n)
+          (let [sprite (nth sprites iter)
+                overflow-x (> x (- 64 8))
+                overflow-y (>= (+ y iter) 32)
+                x1 (/ x 8)
+                x2 (if overflow-x 0 (inc x1))
+                v1 (bit-shift-right sprite (mod x 8))
+                v2 (bit-shift-left sprite (- 8 (mod x 8)))
+                row (if overflow-y (- 32 (+ y iter)) (+ y iter))
+                y1 (get framebuffer row)]
+            (check-set-vf! x row sprite)
+            (aset-byte y1 x1 (unchecked-byte (bit-xor (aget y1 x1) v1)))
+            (when (and (< x2 8)
+                       (> (mod x 8) 0))
+              (aset-byte y1 x2 (unchecked-byte (bit-xor (aget y1 x2) v2)))))
+          (recur (inc iter)))))))
 
 (defn byte->ubyte [byte]
   (bit-and byte 0xFF))
@@ -458,8 +458,7 @@
                   (conj n-bytes (read-mem (+ (short->ushort (read-reg :I))
                                              iter))))
                 [] (range arg3))]
-
-    mem-bytes))
+    (write-fb arg1 arg2 mem-bytes)))
 
 ;; Ex9E - SKP Vx
 ;; Skip next instruction if key with the value of Vx is pressed.

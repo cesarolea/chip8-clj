@@ -1,5 +1,7 @@
 (ns chip8.cpu
-  (:require [clojure.core.match :refer [match]]))
+  (:require [clojure.core.match :refer [match]]
+            [clojure.java.io :as io])
+  (:import [org.apache.commons.io IOUtils]))
 
 (defn- num->digits
   [num]
@@ -596,6 +598,10 @@
     (write-reg offset (byte->ubyte (read-mem (+ (short->ushort (read-reg :I)) offset)))))
   (inc-PC))
 
+;;;;;;;;;;;;;;;
+;; INTERPRETER
+;;;;;;;;;;;;;;;
+
 (defn evaluate
   [opcode]
   (let [opcode-match (vec (format "%04X" opcode))]
@@ -649,3 +655,17 @@
 
            ;; and last...
            [\0  _  _  _] (opcode-0nnn))))
+
+(defn load-rom
+  "Load ROM data into memory"
+  [rom]
+  (loop [iteration 0]
+    (println "Iteration " iteration)
+    (when (< iteration (count rom))
+      (write-mem (+ 0x200 iteration) (aget rom iteration))
+      (recur (inc iteration)))))
+
+(defn- read-rom-file
+  "Reads a rom file from path and loads ROM into memory"
+  [path]
+  (load-rom (IOUtils/toByteArray (io/input-stream path))))

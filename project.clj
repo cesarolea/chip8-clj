@@ -5,7 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.match "0.3.0-alpha5"]
-                 [clojure-lanterna "0.9.7"]]
+                 [clojure-lanterna "0.9.7"]
+                 [commons-io/commons-io "2.6"]]
   :main ^:skip-aot chip8.core
   :target-path "target/%s"
   :pedantic? true

@@ -467,7 +467,7 @@
                   (conj n-bytes (read-mem (+ (short->ushort (read-reg :I))
                                              iter))))
                 [] (range arg3))]
-    (write-fb arg1 arg2 mem-bytes)))
+    (write-fb (read-reg arg1) (read-reg arg2) mem-bytes)))
 
 ;; Ex9E - SKP Vx
 ;; Skip next instruction if key with the value of Vx is pressed.
@@ -611,6 +611,9 @@
            [\B  _  _  _] (opcode-bnnn (bit-and opcode 0x0FFF))
            [\C  _  _  _] (opcode-cxkk (bit-shift-right (bit-and opcode 0x0F00) 8)
                                       (bit-and opcode 0x00FF))
+           [\D  _  _  _] (opcode-dxyn (bit-shift-right (bit-and opcode 0x0F00) 8)
+                                      (bit-shift-right (bit-and opcode 0x00F0) 4)
+                                      (bit-and opcode 0x000F))
 
            ;; and last...
            [\0  _  _  _] (opcode-0nnn))))

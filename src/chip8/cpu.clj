@@ -1,7 +1,5 @@
 (ns chip8.cpu
-  (:require [clojure.core.match :refer [match]]
-            [clojure.java.io :as io])
-  (:import [org.apache.commons.io IOUtils]))
+  (:require [clojure.core.match :refer [match]]))
 
 (defn- num->digits
   [num]
@@ -119,6 +117,8 @@
 (defonce PC (short-array 1))
 (defonce SP (byte-array 1))
 
+(defonce RUN (byte-array 1))
+
 (defn read-reg [reg]
   (cond
     (= reg :I) (aget I-register 0)
@@ -139,6 +139,18 @@
    (aset-short PC 0 (unchecked-short (+ (aget PC 0) n))))
   ([]
    (inc-PC 2)))
+
+(defn running?
+  []
+  (> (aget RUN 0) 0))
+
+(defn suspend
+  []
+  (aset-byte RUN 0 0))
+
+(defn resume
+  []
+  (aset-byte RUN 0 1))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; DISPLAY FUNCTIONS
@@ -660,11 +672,6 @@
     (when (< iteration (count rom))
       (write-mem (+ 0x200 iteration) (aget rom iteration))
       (recur (inc iteration)))))
-
-(defn- read-rom-file
-  "Reads a rom file from path and loads ROM into memory"
-  [path]
-  (load-rom (IOUtils/toByteArray (io/input-stream path))))
 
 (defn step
   "Evaluate a single instruction"

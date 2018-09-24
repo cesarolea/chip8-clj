@@ -6,7 +6,9 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/core.match "0.3.0-alpha5"]
                  [clojure-lanterna "0.9.7"]
-                 [commons-io/commons-io "2.6"]]
+                 [commons-io/commons-io "2.6"]
+                 [org.clojure/core.async "0.4.474"]
+                 [mount "0.1.13"]]
   :main ^:skip-aot chip8.core
   :target-path "target/%s"
   :pedantic? true

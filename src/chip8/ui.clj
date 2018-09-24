@@ -1,8 +1,13 @@
 (ns chip8.ui
   (:require [lanterna.screen :as s]
-            [chip8.cpu :as cpu]))
+            [chip8.cpu :as cpu]
+            [mount.core :refer [defstate]]))
 
-(def screen (s/get-screen :swing {:cols 192 :rows 32 :font "Times New Roman"}))
+(defstate screen
+  :start (let [the-screen (s/get-screen :swing {:cols 192 :rows 32 :font "Times New Roman"})]
+           (s/start the-screen)
+           the-screen)
+  :stop (s/stop screen))
 
 (defn start [] (s/start screen))
 

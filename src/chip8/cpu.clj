@@ -286,8 +286,7 @@
   by 2."
   [arg1 arg2]
   (println "opcode-3xkk")
-  (when (= (read-reg arg1) (unchecked-byte arg2))
-    (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
+  (inc-PC (if (= (read-reg arg1) (unchecked-byte arg2)) 4 2)))
 
 ;; 4xkk - SNE Vx, byte
 ;; Skip next instruction if Vx != kk.
@@ -296,8 +295,7 @@
   counter by 2."
   [arg1 arg2]
   (println "opcode-4xkk")
-  (when (not= (read-reg arg1) (unchecked-byte arg2))
-    (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
+  (inc-PC (if (not= (read-reg arg1) (unchecked-byte arg2)) 4 2)))
 
 ;; 5xy0 - SE Vx, Vy
 ;; Skip next instruction if Vx = Vy.
@@ -306,8 +304,7 @@
   program counter by 2."
   [arg1 arg2]
   (println "opcode-5xy0")
-  (when (= (read-reg arg1) (read-reg arg2))
-    (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
+  (inc-PC (if (= (read-reg arg1) (read-reg arg2)) 4 2)))
 
 ;; 6xkk - LD Vx, byte
 ;; Set Vx = kk.
@@ -660,7 +657,6 @@
   "Load ROM data into memory"
   [rom]
   (loop [iteration 0]
-    (println "Iteration " iteration)
     (when (< iteration (count rom))
       (write-mem (+ 0x200 iteration) (aget rom iteration))
       (recur (inc iteration)))))
@@ -669,3 +665,12 @@
   "Reads a rom file from path and loads ROM into memory"
   [path]
   (load-rom (IOUtils/toByteArray (io/input-stream path))))
+
+(defn step
+  "Evaluate a single instruction"
+  []
+  (let [op-a (read-mem (aget PC 0))
+        op-b (read-mem (+ (aget PC 0) 1))
+        opcode (str (format "%02X" (bit-and 0xFF op-a)) (format "%02X" (bit-and 0xFF op-b)))]
+    (println opcode)
+    (evaluate (Integer/parseInt opcode 16))))

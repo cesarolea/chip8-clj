@@ -18,7 +18,7 @@
              (when (cpu/running?)
                (cpu/step)
                (ui/draw-screen cpu/framebuffer))
-             (Thread/sleep 1851)
+             (Thread/sleep 18)
              (recur)))
   :stop (close! cpu-clock))
 

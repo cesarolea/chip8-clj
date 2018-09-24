@@ -2,7 +2,7 @@
 
 ![horns.ch8 running in chip8-clj](https://raw.githubusercontent.com/cesarolea/chip8-clj/master/resources/horns.png)
 
-chip8-clj is a Chip8 interpreter written in Clojure.
+chip8-clj is a Chip8 interpreter written in Clojure. It mutates state all over the place, so please don't use it as an example of how to write proper Clojure code. It also doesn't implement sound and keypresses (yet).
 
 ## Usage
 

@@ -510,8 +510,7 @@
   (println "opcode-dxyn")
   (let [mem-bytes
         (reduce (fn [n-bytes iter]
-                  (conj n-bytes (read-mem (+ (short->ushort (read-reg :I))
-                                             iter))))
+                  (conj n-bytes (byte->ubyte (read-mem (+ (read-reg :I) iter)))))
                 [] (range arg3))]
     (write-fb (read-reg arg1) (read-reg arg2) mem-bytes)
     (inc-PC)))
@@ -736,6 +735,5 @@
         op-b (read-mem (+ (aget PC 0) 1))
         opcode (str (format "%02X" (bit-and 0xFF op-a)) (format "%02X" (bit-and 0xFF op-b)))]
     (println opcode)
-    (when (debug?)
-      (print-state))
-    (evaluate (Integer/parseInt opcode 16))))
+    (evaluate (Integer/parseInt opcode 16))
+    (when (debug?) (print-state))))

@@ -118,6 +118,7 @@
 (defonce SP (byte-array 1))
 
 (defonce RUN (byte-array 1))
+(defonce DBG (byte-array 1))
 
 (defn read-reg [reg]
   (cond
@@ -144,6 +145,10 @@
   []
   (> (aget RUN 0) 0))
 
+(defn debug?
+  []
+  (> (aget DBG 0) 0))
+
 (defn suspend
   []
   (aset-byte RUN 0 0))
@@ -151,6 +156,12 @@
 (defn resume
   []
   (aset-byte RUN 0 1))
+
+(defn toggle-debug
+  []
+  (if (> (aget DBG 0) 0)
+    (aset-byte DBG 0 0)
+    (aset-byte DBG 0 1)))
 
 ;;;;;;;;;;;;;;;;;;;;
 ;; DISPLAY FUNCTIONS
@@ -725,5 +736,6 @@
         op-b (read-mem (+ (aget PC 0) 1))
         opcode (str (format "%02X" (bit-and 0xFF op-a)) (format "%02X" (bit-and 0xFF op-b)))]
     (println opcode)
-    (print-state)
+    (when (debug?)
+      (print-state))
     (evaluate (Integer/parseInt opcode 16))))

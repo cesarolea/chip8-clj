@@ -1,36 +1,22 @@
-# chip8
+# chip8-clj
 
-FIXME: description
+![horns.ch8 running in chip8-clj](https://raw.githubusercontent.com/cesarolea/chip8-clj/master/resources/horns.png)
 
-## Installation
-
-Download from http://example.com/FIXME.
+chip8-clj is a Chip8 interpreter written in Clojure.
 
 ## Usage
 
-FIXME: explanation
+In the REPL:
 
-    $ java -jar chip8-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
+```
+(-main)
+(read-rom-file "/path/to/a/rom")
+(cpu/resume)
+```
 
 ## License
 
-Copyright © 2018 FIXME
+Copyright © 2018 César Olea
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

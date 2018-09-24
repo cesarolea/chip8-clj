@@ -273,7 +273,7 @@
   from the stack pointer."
   []
   (println "opcode-00EE")
-  (aset-short PC 0 (sp-pop)))
+  (aset-short PC 0 (+ (sp-pop) 2)))
 
 ;; 1nnn - JMP
 ;; Jump to location nnn.

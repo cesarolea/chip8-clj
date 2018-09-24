@@ -216,17 +216,19 @@
 (defn sp-push
   "Pushes value to the address pointed at by SP"
   [value]
-  (let [sp (byte->ubyte (aget SP 0))]
-    (aset-byte SP 0 (unchecked-byte (inc sp)))
-    (aset-short stack sp (unchecked-short value))))
+  (let [sp (aget SP 0)]
+    (aset-byte SP 0 (inc sp))
+    (aset-short stack (inc sp) value)))
 
 (defn sp-pop
   "Takes the value pointed at by SP"
   []
-  (when (= (aget SP 0) 0) (throw (Exception. "SP underflow")))
-  (let [sp (dec (byte->ubyte (aget SP 0)))]
-    (aset-byte SP 0 (unchecked-byte sp))
-    (aget stack sp)))
+  (when (< (aget SP 0) 0) (throw (Exception. "SP underflow")))
+  (let [sp (aget SP 0)
+        value (aget stack sp)]
+    (aset-byte SP 0 (dec sp))
+    (aset-short stack sp 0)
+    value))
 
 (defn reset []
   (doseq [addr (range 4096)]
@@ -239,7 +241,7 @@
     (aset framebuffer row (byte-array 8)))
   (init-fonts font-sprites 0)
   (aset-short I-register 0 0)
-  (aset-byte SP 0 0)
+  (aset-byte SP 0 -1)
   (aset-short PC 0 0x200))
 
 ;;;;;;;;;;;
@@ -448,8 +450,7 @@
   by 2."
   [arg1 arg2]
   (println "opcode-9xy0")
-  (when-not (= (read-reg arg1) (read-reg arg2))
-    (aset-short PC 0 (unchecked-short (+ (aget PC 0) 2)))))
+  (inc-PC (if-not (= (read-reg arg1) (read-reg arg2)) 4 2)))
 
 ;; Annn - LD I, addr
 ;; Set I = nnn.
@@ -666,12 +667,56 @@
            [\0  _  _  _] (opcode-0nnn))))
 
 (defn load-rom
-  "Load ROM data into memory"
+  "Load ROM data into memory. ROM data is an array of bytes."
   [rom]
   (loop [iteration 0]
     (when (< iteration (count rom))
       (write-mem (+ 0x200 iteration) (aget rom iteration))
       (recur (inc iteration)))))
+
+(defn print-state
+  "Print current interpreter state"
+  []
+  (let [op-a (read-mem (aget PC 0))
+        op-b (read-mem (+ (aget PC 0) 1))
+        opcode (str (format "%02X" (bit-and 0xFF op-a)) (format "%02X" (bit-and 0xFF op-b)))
+        I (format "%04X" (read-reg :I))]
+    (println "PC: " opcode " I: " I)
+    (println "REGISTERS")
+    (println "V0: " (format "%02X" (read-reg 0))
+             " V4: " (format "%02X" (read-reg 4))
+             " V8: " (format "%02X" (read-reg 8))
+             " VC: " (format "%02X" (read-reg 0xC)))
+    (println "V1: " (format "%02X" (read-reg 1))
+             " V5: " (format "%02X" (read-reg 5))
+             " V9: " (format "%02X" (read-reg 9))
+             " VD: " (format "%02X" (read-reg 0xD)))
+    (println "V2: " (format "%02X" (read-reg 2))
+             " V6: " (format "%02X" (read-reg 6))
+             " VA: " (format "%02X" (read-reg 0xA))
+             " VE: " (format "%02X" (read-reg 0xD)))
+    (println "V3: " (format "%02X" (read-reg 3))
+             " V7: " (format "%02X" (read-reg 7))
+             " VB: " (format "%02X" (read-reg 0xB))
+             " VF: " (format "%02X" (read-reg 0xF)))
+    (println "STACK")
+    (println "SP: " (format "%02X" (aget SP 0)))
+    (println "0: " (format "%02X" (aget stack 0)))
+    (println "1: " (format "%02X" (aget stack 1)))
+    (println "2: " (format "%02X" (aget stack 2)))
+    (println "3: " (format "%02X" (aget stack 3)))
+    (println "4: " (format "%02X" (aget stack 4)))
+    (println "5: " (format "%02X" (aget stack 5)))
+    (println "6: " (format "%02X" (aget stack 6)))
+    (println "7: " (format "%02X" (aget stack 7)))
+    (println "8: " (format "%02X" (aget stack 8)))
+    (println "9: " (format "%02X" (aget stack 9)))
+    (println "A: " (format "%02X" (aget stack 0xA)))
+    (println "B: " (format "%02X" (aget stack 0xB)))
+    (println "C: " (format "%02X" (aget stack 0xC)))
+    (println "D: " (format "%02X" (aget stack 0xD)))
+    (println "E: " (format "%02X" (aget stack 0xE)))
+    (println "F: " (format "%02X" (aget stack 0xF)))))
 
 (defn step
   "Evaluate a single instruction"
@@ -680,4 +725,5 @@
         op-b (read-mem (+ (aget PC 0) 1))
         opcode (str (format "%02X" (bit-and 0xFF op-a)) (format "%02X" (bit-and 0xFF op-b)))]
     (println opcode)
+    (print-state)
     (evaluate (Integer/parseInt opcode 16))))

@@ -22,8 +22,26 @@
              (recur)))
   :stop (close! cpu-clock))
 
+(defstate sound-loop
+  :start (go-loop []
+           (do
+             (when (cpu/running?))
+             (Thread/sleep (/ 1 60))
+             (recur)))
+  :stop (close! sound-loop))
+
+(defstate delay-loop
+  :start (go-loop []
+           (do
+             (when (cpu/running?))
+             (Thread/sleep (/ 1 60))
+             (recur)))
+  :stop (close! sound-loop))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   (cpu/reset)
-  (start))
+  (start)
+  (.addShutdownHook (Runtime/getRuntime)
+                    (Thread. #(stop))))

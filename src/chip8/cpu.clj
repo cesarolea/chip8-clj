@@ -216,6 +216,7 @@
                 v1 (bit-shift-right sprite (mod x 8))
                 v2 (bit-shift-left sprite (- 8 (mod x 8)))
                 row (if overflow-y (- 32 (+ y iter)) (+ y iter))
+                row (if (< row 0) (* -1 row) row)
                 y1 (get framebuffer row)]
             (check-set-vf! x row sprite)
             (aset-byte y1 x1 (unchecked-byte (bit-xor (aget y1 x1) v1)))

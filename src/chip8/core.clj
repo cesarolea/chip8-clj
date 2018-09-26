@@ -30,12 +30,13 @@
            (do
              (when (and (cpu/running?)
                         (not (= (aget cpu/ST 0) 0)))
-               (reset! sound-future (future (sound/play 60 (Long/MAX_VALUE))))
+               (when (or (and (future? @sound-future)
+                              (future-done? @sound-future))
+                         (not (future? @sound-future)))
+                 (reset! sound-future (future (sound/play 60 (* (cpu/byte->ubyte (aget cpu/ST 0))
+                                                                (/ 1 60)
+                                                                1000)))))
                (cpu/dec-reg cpu/ST))
-             (when (or (not (cpu/running?))
-                       (= (aget cpu/ST 0) 0))
-               (when @sound-future
-                 (reset! sound-future (future-cancel @sound-future))))
              (Thread/sleep (/ 1 60))
              (recur)))
   :stop (close! sound-loop))

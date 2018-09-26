@@ -117,6 +117,11 @@
 (defonce PC (short-array 1))
 (defonce SP (byte-array 1))
 
+;; Chip-8 also has two special purpose 8-bit registers, for the delay and sound timers.
+;; When these registers are non-zero, they are automatically decremented at a rate of 60Hz.
+(defonce DT (byte-array 1))
+(defonce ST (byte-array 1))
+
 (defonce RUN (byte-array 1))
 (defonce DBG (byte-array 1))
 
@@ -140,6 +145,11 @@
    (aset-short PC 0 (unchecked-short (+ (aget PC 0) n))))
   ([]
    (inc-PC 2)))
+
+(defn dec-reg
+  [reg]
+  (when (> (byte->ubyte (aget reg 0)) 0)
+    (aset-byte reg 0 (unchecked-byte (dec (byte->ubyte (aget reg 0)))))))
 
 (defn running?
   []
@@ -265,8 +275,7 @@
 (defn opcode-0nnn
   "This instruction is only used on the old computers on which Chip-8 was originally implemented.
   It is ignored by modern interpreters."
-  []
-  (println "opcode-0nnn"))
+  [])
 
 ;; 00E0 - CLS
 ;; Clear the display.
@@ -735,6 +744,5 @@
   (let [op-a (read-mem (aget PC 0))
         op-b (read-mem (+ (aget PC 0) 1))
         opcode (str (format "%02X" (bit-and 0xFF op-a)) (format "%02X" (bit-and 0xFF op-b)))]
-    (println opcode)
     (evaluate (Integer/parseInt opcode 16))
     (when (debug?) (print-state))))

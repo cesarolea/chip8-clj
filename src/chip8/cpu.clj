@@ -73,13 +73,13 @@
                                     (byte-array 8) (byte-array 8) (byte-array 8) (byte-array 8)]))
 
 (defn bits [n s]
-  (reverse
-   (take s
-         (map
-          (fn [i] (bit-and 0x01 i))
-          (iterate
-           (fn [i] (bit-shift-right i 1))
-           n)))))
+  (->> (map
+        (fn [i]
+          (bit-and 0x01 i))
+        (iterate (fn [i] (bit-shift-right i 1))
+                 n))
+       (take s)
+       reverse))
 
 (defn byte->ubyte [byte]
   (bit-and byte 0xFF))
@@ -547,6 +547,7 @@
   "The value of DT is placed into Vx."
   [arg1]
   (println "opcode-fx07")
+  (write-reg arg1 (aget DT 0))
   (inc-PC))
 
 ;; Fx0A - LD Vx, K
@@ -562,6 +563,7 @@
   "DT is set equal to the value of Vx."
   [arg1]
   (println "opcode-fx15")
+  (aset-byte DT 0 (read-reg arg1))
   (inc-PC))
 
 ;; Fx18 - LD ST, Vx
@@ -570,6 +572,7 @@
   "ST is set equal to the value of Vx."
   [arg1]
   (println "opcode-fx18")
+  (aset-byte ST 0 (read-reg arg1))
   (inc-PC))
 
 ;; Fx1E - ADD I, Vx
@@ -590,6 +593,7 @@
   Vx."
   [arg1]
   (println "opcode-fx29")
+  (write-reg :I (* (byte->ubyte (read-reg arg1)) 5))
   (inc-PC))
 
 
@@ -675,6 +679,10 @@
            [\F  _ \3 \3] (opcode-fx33 (bit-shift-right (bit-and opcode 0x0F00) 8))
            [\F  _ \5 \5] (opcode-fx55 (bit-shift-right (bit-and opcode 0x0F00) 8))
            [\F  _ \6 \5] (opcode-fx65 (bit-shift-right (bit-and opcode 0x0F00) 8))
+           [\F  _ \0 \7] (opcode-fx07 (bit-shift-right (bit-and opcode 0x0F00) 8))
+           [\F  _ \1 \5] (opcode-fx15 (bit-shift-right (bit-and opcode 0x0F00) 8))
+           [\F  _ \1 \8] (opcode-fx18 (bit-shift-right (bit-and opcode 0x0F00) 8))
+           [\F  _ \2 \9] (opcode-fx29 (bit-shift-right (bit-and opcode 0x0F00) 8))
            [\A  _  _  _] (opcode-annn (bit-and opcode 0x0FFF))
            [\B  _  _  _] (opcode-bnnn (bit-and opcode 0x0FFF))
            [\C  _  _  _] (opcode-cxkk (bit-shift-right (bit-and opcode 0x0F00) 8)

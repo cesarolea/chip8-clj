@@ -126,7 +126,6 @@
 (defonce DBG (byte-array 1))
 
 ;; Stores the key currently pressed
-(defonce KEYUP (char-array 1))
 (defonce KEYDOWN (char-array 1))
 
 (defn key-mapping [character]
@@ -278,7 +277,6 @@
   (aset-short I-register 0 0)
   (aset-byte SP 0 -1)
   (aset-short PC 0 0x200)
-  (aset-char KEYUP 0 java.lang.Character/MIN_VALUE)
   (aset-char KEYDOWN 0 java.lang.Character/MIN_VALUE))
 
 ;;;;;;;;;;;
@@ -543,8 +541,8 @@
 ;; Ex9E - SKP Vx
 ;; Skip next instruction if key with the value of Vx is pressed.
 (defn opcode-ex9e
-  "Checks the keyboard, and if the key corresponding to the value of Vx is currently in the down
-  position, PC is increased by 2."
+  "Skip the following instruction if the key corresponding to the hex value currently stored in
+  register VX is pressed"
   [arg1]
   (println "opcode-ex9e")
   (inc-PC (if (= (key-mapping (aget KEYDOWN 0)) (byte->ubyte (read-reg arg1))) 4 2)))
@@ -552,12 +550,12 @@
 ;; ExA1 - SKNP Vx
 ;; Skip next instruction if key with the value of Vx is not pressed.
 (defn opcode-exa1
-  "Checks the keyboard, and if the key corresponding to the value of Vx is currently in the up
-  position, PC is increased by 2."
+  "Skip the following instruction if the key corresponding to the hex value currently stored in
+  register VX is not pressed"
   [arg1]
   (println "opcode-exa1")
   (println "arg1: " arg1 " register: " (byte->ubyte (read-reg arg1)))
-  (inc-PC (if-not (= (key-mapping (aget KEYUP 0)) (byte->ubyte (read-reg arg1))) 4 2)))
+  (inc-PC (if-not (= (key-mapping (aget KEYDOWN 0)) (byte->ubyte (read-reg arg1))) 4 2)))
 
 ;; Fx07 - LD Vx, DT
 ;; Set Vx = delay timer value.

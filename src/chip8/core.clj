@@ -22,7 +22,7 @@
                (cpu/step)
                (ui/read-keyboard)
                (ui/draw-screen cpu/framebuffer))
-             (Thread/sleep (/ 1 1080))
+             (Thread/sleep (/ (/ 1 720) 1000))
              (recur)))
   :stop (close! cpu-clock))
 
@@ -38,7 +38,7 @@
                                                                 (/ 1 60)
                                                                 1000)))))
                (cpu/dec-reg cpu/ST))
-             (Thread/sleep (/ 1 60))
+             (Thread/sleep (/ (/ 1 60) 1000))
              (recur)))
   :stop (close! sound-loop))
 
@@ -48,7 +48,7 @@
              (when (and (cpu/running?)
                         (not (= (aget cpu/DT 0) 0)))
                (cpu/dec-reg cpu/DT))
-             (Thread/sleep (/ 1 60))
+             (Thread/sleep (/ (/ 1 60) 1000))
              (recur)))
   :stop (close! delay-loop))
 

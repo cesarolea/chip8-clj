@@ -20,8 +20,9 @@
            (do
              (when (cpu/running?)
                (cpu/step)
+               (ui/read-keyboard)
                (ui/draw-screen cpu/framebuffer))
-             (Thread/sleep (/ 1 540))
+             (Thread/sleep (/ 1 1080))
              (recur)))
   :stop (close! cpu-clock))
 
@@ -52,7 +53,6 @@
   :stop (close! delay-loop))
 
 (defn -main
-  "I don't do a whole lot ... yet."
   [& args]
   (cpu/reset)
   (start)

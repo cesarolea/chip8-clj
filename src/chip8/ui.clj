@@ -34,3 +34,66 @@
             (recur (inc x)))))
       (recur (inc y))))
   (s/redraw screen))
+
+(defn read-keyboard
+  []
+  (let [character (or (s/get-key screen) java.lang.Character/MIN_VALUE)
+        null-char java.lang.Character/MIN_VALUE
+        keyup (aget cpu/KEYUP 0)
+        keydown (aget cpu/KEYDOWN 0)]
+    (when (contains? #{\1 \2 \3 \4 \q \w \e \r \a \s \d \f \z \x \c \v null-char} character)
+      (cond
+        ;; 000
+        ;; if everything is null, do nothing
+        (= character keyup keydown null-char) nil
+        ;; 001
+        ;; key was released
+        (and (= character keyup null-char)
+             (not= keydown null-char)) (do
+                                         (println "Key down: " keydown)
+                                         (aset-char cpu/KEYDOWN 0 null-char)
+                                         (aset-char cpu/KEYUP 0 keydown))
+        ;; 010
+        ;; key up event finished
+        (and (= character keydown null-char)
+             (not= keyup null-char)) (do
+                                       (println "Key up: " keyup)
+                                       (aset-char cpu/KEYUP 0 null-char))
+        ;; 011
+        ;; key was released while keyup event finished
+        (and (= character null-char)
+             (not= keydown null-char)
+             (not= keyup null-char)) (do
+                                       (println "Key up: " keyup " Key down: " keydown)
+                                       (aset-char cpu/KEYDOWN 0 null-char)
+                                       (aset-char cpu/KEYUP 0 keydown))
+        ;; 100
+        ;; key pressed
+        (and (not= character null-char)
+             (= keyup keydown null-char)) (do
+                                            (println "Key pressed: " character)
+                                            (aset-char cpu/KEYDOWN 0 character))
+        ;; 101
+        ;; key pressed while keydown event finished
+        (and (= keyup null-char)
+             (not= character null-char)
+             (not= keydown null-char)) (do
+                                         (println "Key pressed: " character " Key down: " keydown)
+                                         (aset-char cpu/KEYUP 0 keydown)
+                                         (aset-char cpu/KEYDOWN 0 character))
+        ;; 110
+        ;; key pressed while keyup event finished
+        (and (= keydown null-char)
+             (not= character null-char)
+             (not= keyup null-char)) (do
+                                       (println "Key pressed: " character " Key up: " keyup)
+                                       (aset-char cpu/KEYDOWN 0 character)
+                                       (aset-char cpu/KEYUP 0 null-char))
+        ;; 111
+        ;; key pressed while keydown and keyup events finished
+        (and (not= character null-char)
+             (not= keyup null-char)
+             (not= keydown null-char)) (do
+                                         (println "Key pressed: " character " Key up: " keyup " Key down: " keydown)
+                                         (aset-char cpu/KEYDOWN 0 character)
+                                         (aset-char cpu/KEYUP 0 keydown))))))

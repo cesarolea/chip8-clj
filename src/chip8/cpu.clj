@@ -295,7 +295,6 @@
 (defn opcode-00E0
   "Clear the display. "
   []
-  (println "opcode-00E0")
   (doseq [row (range 32)]
     (aset framebuffer row (byte-array 8)))
   (inc-PC))
@@ -306,7 +305,6 @@
   "The interpreter sets the program counter to the address at the top of the stack, then subtracts 1
   from the stack pointer."
   []
-  (println "opcode-00EE")
   (aset-short PC 0 (+ (sp-pop) 2)))
 
 ;; 1nnn - JMP
@@ -314,7 +312,6 @@
 (defn opcode-1nnn
   "The interpreter sets the program counter to nnn."
   [arg1]
-  (println "opcode-1nnn")
   (aset-short PC 0 (unchecked-short arg1)))
 
 ;; 2nnn - CALL addr
@@ -323,7 +320,6 @@
   "The interpreter increments the stack pointer, then puts the current PC on the top of the stack.
   The PC is then set to nnn."
   [arg1]
-  (println "opcode-2nnn")
   (sp-push (aget PC 0))
   (aset-short PC 0 (unchecked-short arg1)))
 
@@ -333,7 +329,6 @@
   "The interpreter compares register Vx to kk, and if they are equal, increments the program counter
   by 2."
   [arg1 arg2]
-  (println "opcode-3xkk")
   (inc-PC (if (= (read-reg arg1) (unchecked-byte arg2)) 4 2)))
 
 ;; 4xkk - SNE Vx, byte
@@ -342,7 +337,6 @@
   "The interpreter compares register Vx to kk, and if they are not equal, increments the program
   counter by 2."
   [arg1 arg2]
-  (println "opcode-4xkk")
   (inc-PC (if (not= (read-reg arg1) (unchecked-byte arg2)) 4 2)))
 
 ;; 5xy0 - SE Vx, Vy
@@ -351,7 +345,6 @@
   "The interpreter compares register Vx to register Vy, and if they are equal, increments the
   program counter by 2."
   [arg1 arg2]
-  (println "opcode-5xy0")
   (inc-PC (if (= (read-reg arg1) (read-reg arg2)) 4 2)))
 
 ;; 6xkk - LD Vx, byte
@@ -359,7 +352,6 @@
 (defn opcode-6xkk
   "The interpreter puts the value kk into register Vx."
   [arg1 arg2]
-  (println "opcode-6xkk")
   (write-reg arg1 arg2)
   (inc-PC))
 
@@ -368,7 +360,6 @@
 (defn opcode-7xkk
   "Adds the value kk to the value of register Vx, then stores the result in Vx."
   [arg1 arg2]
-  (println "opcode-7xkk")
   (write-reg arg1 (+ arg2 (read-reg arg1)))
   (inc-PC))
 
@@ -377,7 +368,6 @@
 (defn opcode-8xy0
   "Stores the value of register Vy in register Vx."
   [arg1 arg2]
-  (println "opcode-8xy0")
   (write-reg arg1 (read-reg arg2))
   (inc-PC))
 
@@ -388,7 +378,6 @@
   A bitwise OR compares the corresponding bits from two values, and if either bit is 1,
   then the same bit in the result is also 1. Otherwise, it is 0. "
   [arg1 arg2]
-  (println "opcode-8xy1")
   (write-reg arg1 (bit-or (read-reg arg1) (read-reg arg2)))
   (inc-PC))
 
@@ -399,7 +388,6 @@
   A bitwise AND compares the corresponding bits from two values, and if both bits are 1,
   then the same bit in the result is also 1. Otherwise, it is 0. "
   [arg1 arg2]
-  (println "opcode-8xy2")
   (write-reg arg1 (bit-and (read-reg arg1) (read-reg arg2)))
   (inc-PC))
 
@@ -410,7 +398,6 @@
   An exclusive OR compares the corresponding bits from two values, and if the bits are not both
   the same, then the corresponding bit in the result is set to 1. Otherwise, it is 0. "
   [arg1 arg2]
-  (println "opcode-8xy3")
   (write-reg arg1 (bit-xor (read-reg arg1) (read-reg arg2)))
   (inc-PC))
 
@@ -420,7 +407,6 @@
   "The values of Vx and Vy are added together. If the result is greater than 8 bits (i.e., > 255,)
   VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx."
   [arg1 arg2]
-  (println "opcode-8xy4")
   (let [result (+ (byte->ubyte (read-reg arg1)) (byte->ubyte (read-reg arg2)))]
     (write-reg 0xF (if (> result 255) 1 0))
     (inc-PC)))
@@ -431,7 +417,6 @@
   "If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is subtracted from Vx,
   and the results stored in Vx."
   [arg1 arg2]
-  (println "opcode-8xy5")
   (let [vx (byte->ubyte (read-reg arg1))
         vy (byte->ubyte (read-reg arg2))
         result (- vx vy)]
@@ -445,7 +430,6 @@
   "If the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
   Then Vx is divided by 2."
   [arg1 arg2]
-  (println "opcode-8xy6")
   (write-reg 0xF (bit-and (read-reg arg1) 1))
   (write-reg arg1 (/ (byte->ubyte (read-reg arg1)) 2))
   (inc-PC))
@@ -456,7 +440,6 @@
   "If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is subtracted from Vy,
   and the results stored in Vx."
   [arg1 arg2]
-  (println "opcode-8xy7")
   (let [vx (byte->ubyte (read-reg arg1))
         vy (byte->ubyte (read-reg arg2))
         result (- vy vx)]
@@ -470,7 +453,6 @@
   "If the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
   Then Vx is multiplied by 2."
   [arg1 arg2]
-  (println "opcode-8xye")
   (if (> (bit-and (read-reg arg1) 2r10000000) 0)
     (write-reg 0xF 1)
     (write-reg 0xF 0))
@@ -483,7 +465,6 @@
   "The values of Vx and Vy are compared, and if they are not equal, the program counter is increased
   by 2."
   [arg1 arg2]
-  (println "opcode-9xy0")
   (inc-PC (if-not (= (read-reg arg1) (read-reg arg2)) 4 2)))
 
 ;; Annn - LD I, addr
@@ -491,7 +472,6 @@
 (defn opcode-annn
   "The value of register I is set to nnn."
   [arg1]
-  (println "opcode-annn")
   (write-reg :I arg1)
   (inc-PC))
 
@@ -500,7 +480,6 @@
 (defn opcode-bnnn
   "The program counter is set to nnn plus the value of V0."
   [arg1]
-  (println "opcode-bnnn")
   (aset-short PC 0 (unchecked-short (+ arg1 (read-reg 0)))))
 
 ;; Cxkk - RND Vx, byte
@@ -509,9 +488,7 @@
   "The interpreter generates a random number from 0 to 255, which is then ANDed with the value kk.
   The results are stored in Vx. See instruction 8xy2 for more information on AND."
   [arg1 arg2]
-  (println "opcode-cxkk")
   (let [random (rand-int 256)]
-    (println "random int" random)
     (write-reg arg1 (bit-and random arg2))
     (inc-PC)))
 
@@ -530,7 +507,6 @@
   VF is set to 1, otherwise it is set to 0. If the sprite is positioned so part of it is outside
   the coordinates of the display, it wraps around to the opposite side of the screen."
   [arg1 arg2 arg3]
-  (println "opcode-dxyn")
   (let [mem-bytes
         (reduce (fn [n-bytes iter]
                   (conj n-bytes (byte->ubyte (read-mem (+ (read-reg :I) iter)))))
@@ -544,7 +520,6 @@
   "Skip the following instruction if the key corresponding to the hex value currently stored in
   register VX is pressed"
   [arg1]
-  (println "opcode-ex9e")
   (inc-PC (if (= (key-mapping (aget KEYDOWN 0)) (byte->ubyte (read-reg arg1))) 4 2)))
 
 ;; ExA1 - SKNP Vx
@@ -553,8 +528,6 @@
   "Skip the following instruction if the key corresponding to the hex value currently stored in
   register VX is not pressed"
   [arg1]
-  (println "opcode-exa1")
-  (println "arg1: " arg1 " register: " (byte->ubyte (read-reg arg1)))
   (inc-PC (if-not (= (key-mapping (aget KEYDOWN 0)) (byte->ubyte (read-reg arg1))) 4 2)))
 
 ;; Fx07 - LD Vx, DT
@@ -562,7 +535,6 @@
 (defn opcode-fx07
   "The value of DT is placed into Vx."
   [arg1]
-  (println "opcode-fx07")
   (write-reg arg1 (aget DT 0))
   (inc-PC))
 
@@ -571,7 +543,6 @@
 (defn opcode-fx0a
   "All execution stops until a key is pressed, then the value of that key is stored in Vx."
   [arg1]
-  (println "opcode-fx0a")
   (when (key-mapping (aget KEYDOWN 0))
     (write-reg arg1 (aget KEYDOWN 0))
     (inc-PC)))
@@ -581,7 +552,6 @@
 (defn opcode-fx15
   "DT is set equal to the value of Vx."
   [arg1]
-  (println "opcode-fx15")
   (aset-byte DT 0 (read-reg arg1))
   (inc-PC))
 
@@ -590,7 +560,6 @@
 (defn opcode-fx18
   "ST is set equal to the value of Vx."
   [arg1]
-  (println "opcode-fx18")
   (aset-byte ST 0 (read-reg arg1))
   (inc-PC))
 
@@ -599,7 +568,6 @@
 (defn opcode-fx1e
   "The values of I and Vx are added, and the results are stored in I."
   [arg1]
-  (println "opcode-fx1e")
   (let [i (short->ushort (read-reg :I))
         result (+ i (byte->ubyte (read-reg arg1)))]
     (write-reg :I result)
@@ -611,7 +579,6 @@
   "The value of I is set to the location for the hexadecimal sprite corresponding to the value of
   Vx."
   [arg1]
-  (println "opcode-fx29")
   (write-reg :I (* (byte->ubyte (read-reg arg1)) 5))
   (inc-PC))
 
@@ -622,7 +589,6 @@
   "The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at
   location in I, the tens digit at location I+1, and the ones digit at location I+2."
   [arg1]
-  (println "opcode-fx33")
   (let [num (byte->ubyte (read-reg arg1))
         digits (num->digits num)]
     (write-mem (+ (short->ushort (read-reg :I)) 2) (nth digits 2 0))
@@ -636,7 +602,6 @@
   "The interpreter copies the values of registers V0 through Vx into memory, starting at the address
   in I."
   [arg1]
-  (println "opcode-fx55")
   (doseq [offset (range (inc arg1))]
     (write-mem (+ (short->ushort (read-reg :I)) offset) (byte->ubyte (read-reg offset))))
   (inc-PC))
@@ -646,7 +611,6 @@
 (defn opcode-fx65
   "The interpreter reads values from memory starting at location I into registers V0 through Vx."
   [arg1]
-  (println "opcode-fx65")
   (doseq [offset (range (inc arg1))]
     (write-reg offset (byte->ubyte (read-mem (+ (short->ushort (read-reg :I)) offset)))))
   (inc-PC))

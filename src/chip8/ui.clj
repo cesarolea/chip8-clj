@@ -1,13 +1,41 @@
 (ns chip8.ui
   (:require [lanterna.screen :as s]
             [chip8.cpu :as cpu]
-            [mount.core :refer [defstate]]))
+            [mount.core :refer [defstate]])
+  (:import [java.awt Graphics Color Dimension]
+           [java.awt.event KeyListener KeyEvent]
+           [java.awt.image BufferedImage]
+           [javax.swing JPanel JFrame SwingUtilities]))
+
+(defn render [^Graphics g ^long width ^long height])
+
+(defn get-image [^long width ^long height]
+  (let [image (BufferedImage. width height BufferedImage/TYPE_INT_RGB)]
+    (render (.createGraphics image) width height)
+    image))
+
+(defn new-drawer []
+  (proxy [JPanel] []
+    (paint [^Graphics graphics-context]
+      (let [^int width (proxy-super getWidth)
+            ^int height (proxy-super getHeight)]
+        (.drawImage graphics-context (get-image width height) 0 0 nil)))))
 
 (defstate screen
   :start (let [the-screen (s/get-screen :swing {:cols 256 :rows 32 :font "Times New Roman"})]
            (s/start the-screen)
            the-screen)
   :stop (s/stop screen))
+
+(defn window []
+  (let [^JPanel drawing-obj (new-drawer)
+        ^JFrame frame (JFrame. "clj-chip8")
+        closer (proxy [KeyListener] []
+                 (keyPressed [^KeyEvent e] (when (= (.getKeyChar e) \p) (.dispose frame)))
+                 (keyReleased [e])
+                 (keyTyped [e]))]
+    (.setPreferredSize drawing-obj (Dimension. 64 32))
+    (.add (.getContentPane frame) drawing-obj)))
 
 (defn start [] (s/start screen))
 

@@ -56,5 +56,7 @@
   [& args]
   (cpu/reset)
   (start)
+  (read-rom-file "/Users/cesarolea/Downloads/Space Invaders [David Winter].ch8")
+  (cpu/resume)
   (.addShutdownHook (Runtime/getRuntime)
                     (Thread. #(stop))))

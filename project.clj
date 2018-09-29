@@ -8,7 +8,8 @@
                  [clojure-lanterna "0.9.7"]
                  [commons-io/commons-io "2.6"]
                  [org.clojure/core.async "0.4.474"]
-                 [mount "0.1.13"]]
+                 [mount "0.1.13"]
+                 [seesaw "1.5.0"]]
   :main ^:skip-aot chip8.core
   :target-path "target/%s"
   :pedantic? true

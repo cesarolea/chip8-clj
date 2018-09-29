@@ -1,25 +1,12 @@
 (ns chip8.ui
   (:require [lanterna.screen :as s]
             [chip8.cpu :as cpu]
-            [mount.core :refer [defstate]])
-  (:import [java.awt Graphics Color Dimension]
-           [java.awt.event KeyListener KeyEvent]
-           [java.awt.image BufferedImage]
-           [javax.swing JPanel JFrame SwingUtilities]))
-
-(defn render [^Graphics g ^long width ^long height])
-
-(defn get-image [^long width ^long height]
-  (let [image (BufferedImage. width height BufferedImage/TYPE_INT_RGB)]
-    (render (.createGraphics image) width height)
-    image))
-
-(defn new-drawer []
-  (proxy [JPanel] []
-    (paint [^Graphics graphics-context]
-      (let [^int width (proxy-super getWidth)
-            ^int height (proxy-super getHeight)]
-        (.drawImage graphics-context (get-image width height) 0 0 nil)))))
+            [mount.core :refer [defstate]]
+            [seesaw.core :as seesaw]
+            [seesaw.graphics :as graphics]
+            [seesaw.color :refer [to-color]])
+  (:import [java.awt.image BufferedImage]
+           [java.awt.Color]))
 
 (defstate screen
   :start (let [the-screen (s/get-screen :swing {:cols 256 :rows 32 :font "Times New Roman"})]
@@ -27,21 +14,27 @@
            the-screen)
   :stop (s/stop screen))
 
-(defn window []
-  (let [^JPanel drawing-obj (new-drawer)
-        ^JFrame frame (JFrame. "clj-chip8")
-        closer (proxy [KeyListener] []
-                 (keyPressed [^KeyEvent e] (when (= (.getKeyChar e) \p) (.dispose frame)))
-                 (keyReleased [e])
-                 (keyTyped [e]))]
-    (.setPreferredSize drawing-obj (Dimension. 64 32))
-    (.add (.getContentPane frame) drawing-obj)))
-
 (defn start [] (s/start screen))
 
 (defn stop [] (s/stop screen))
 
 (defn clear [] (s/clear screen) (s/redraw screen))
+
+(defn window []
+  (let [frm (seesaw/frame :title "clj-chip8" :resizable? false :on-close :dispose)
+        canvas (seesaw/canvas)
+        img (graphics/buffered-image 64 32)
+        g2d (.getGraphics img)]
+    (seesaw/native!)
+    (graphics/anti-alias g2d)
+    (seesaw/config! canvas :size [(* 64 8) :by (* 32 8)])
+    (seesaw/config! canvas :paint (fn [c g] (try (graphics/draw g (graphics/rect 0 0
+                                                                                 (seesaw/width c)
+                                                                                 (seesaw/height c))
+                                                                (graphics/style :background :black))
+                                                 (.drawImage g img 0 0 nil))))
+    (seesaw/config! frm :content canvas)
+    (-> frm seesaw/pack! seesaw/show!)))
 
 (defn draw-screen
   [framebuffer]

@@ -360,6 +360,7 @@
 (defn opcode-7xkk
   "Adds the value kk to the value of register Vx, then stores the result in Vx."
   [arg1 arg2]
+  (println "opcode-7xkk")
   (write-reg arg1 (+ arg2 (read-reg arg1)))
   (inc-PC))
 
@@ -408,6 +409,7 @@
   VF is set to 1, otherwise 0. Only the lowest 8 bits of the result are kept, and stored in Vx."
   [arg1 arg2]
   (let [result (+ (byte->ubyte (read-reg arg1)) (byte->ubyte (read-reg arg2)))]
+    (write-reg arg1 (bit-and 0xFF result))
     (write-reg 0xF (if (> result 255) 1 0))
     (inc-PC)))
 
@@ -535,8 +537,9 @@
 (defn opcode-fx07
   "The value of DT is placed into Vx."
   [arg1]
-  (write-reg arg1 (aget DT 0))
-  (inc-PC))
+  (let [dt (aget DT 0)]
+    (write-reg arg1 dt)
+    (inc-PC)))
 
 ;; Fx0A - LD Vx, K
 ;; Wait for a key press, store the value of the key in Vx.
@@ -552,6 +555,7 @@
 (defn opcode-fx15
   "DT is set equal to the value of Vx."
   [arg1]
+  (println "Setting delay timer to " (read-reg arg1))
   (aset-byte DT 0 (read-reg arg1))
   (inc-PC))
 
@@ -568,6 +572,7 @@
 (defn opcode-fx1e
   "The values of I and Vx are added, and the results are stored in I."
   [arg1]
+  (println "opcode-fx1e")
   (let [i (short->ushort (read-reg :I))
         result (+ i (byte->ubyte (read-reg arg1)))]
     (write-reg :I result)

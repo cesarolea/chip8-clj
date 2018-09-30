@@ -20,12 +20,7 @@
         (aset-char cpu/KEYDOWN 0 char)))
     (when (= event java.awt.event.KeyEvent/KEY_RELEASED)
       (when (contains? #{\1 \2 \3 \4 \q \w \e \r \a \s \d \f \z \x \c \v null-char} char)
-        (aset-char cpu/KEYDOWN 0 null-char))))
-  #_(let [character (or (s/get-key screen) java.lang.Character/MIN_VALUE)
-        null-char java.lang.Character/MIN_VALUE
-        keydown (aget cpu/KEYDOWN 0)]
-    (when (contains? #{\1 \2 \3 \4 \q \w \e \r \a \s \d \f \z \x \c \v null-char} character)
-      (aset-char cpu/KEYDOWN 0 character))))
+        (aset-char cpu/KEYDOWN 0 0)))))
 
 (defn window []
   (let [frm (seesaw/frame :title "clj-chip8" :resizable? false :on-close :dispose

@@ -15,14 +15,18 @@
   [path]
   (cpu/load-rom (IOUtils/toByteArray (io/input-stream path))))
 
+(defstate render-loop
+  :start (future (loop []
+                   (when (cpu/running?) (ui/draw-screen cpu/framebuffer))
+                   (Thread/sleep (* (/ 1 720) 1000))
+                   (recur)))
+  :stop (future-cancel render-loop))
+
 (defstate cpu-clock
   :start (go-loop []
            (do
-             (when (cpu/running?)
-               (cpu/step)
-               (ui/read-keyboard)
-               (ui/draw-screen cpu/framebuffer))
-             (Thread/sleep (/ (/ 1 720) 1000))
+             (when (cpu/running?) (cpu/step))
+             (Thread/sleep (* (/ 1 720) 1000))
              (recur)))
   :stop (close! cpu-clock))
 
@@ -38,7 +42,7 @@
                                                                 (/ 1 60)
                                                                 1000)))))
                (cpu/dec-reg cpu/ST))
-             (Thread/sleep (/ (/ 1 60) 1000))
+             (Thread/sleep (* (/ 1 60) 1000))
              (recur)))
   :stop (close! sound-loop))
 
@@ -48,7 +52,7 @@
              (when (and (cpu/running?)
                         (not (= (aget cpu/DT 0) 0)))
                (cpu/dec-reg cpu/DT))
-             (Thread/sleep (/ (/ 1 60) 1000))
+             (Thread/sleep (* (/ 1 60) 1000))
              (recur)))
   :stop (close! delay-loop))
 
@@ -56,7 +60,5 @@
   [& args]
   (cpu/reset)
   (start)
-  (read-rom-file "/Users/cesarolea/Downloads/Space Invaders [David Winter].ch8")
-  (cpu/resume)
   (.addShutdownHook (Runtime/getRuntime)
                     (Thread. #(stop))))

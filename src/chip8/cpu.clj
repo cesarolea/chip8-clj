@@ -545,7 +545,7 @@
 (defn opcode-fx0a
   "All execution stops until a key is pressed, then the value of that key is stored in Vx."
   [arg1]
-  (when (key-mapping (aget KEYDOWN 0))
+  (when-not (= (aget KEYDOWN 0) java.lang.Character/MIN_VALUE)
     (write-reg arg1 (aget KEYDOWN 0))
     (inc-PC)))
 

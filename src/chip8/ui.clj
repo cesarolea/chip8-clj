@@ -9,6 +9,7 @@
            [java.awt.Color]))
 
 (defonce img (graphics/buffered-image (* 64 8) (* 32 8)))
+(defonce key (atom 0))
 
 (defn read-keyboard
   [key-event]
@@ -17,10 +18,10 @@
         null-char java.lang.Character/MIN_VALUE]
     (when (= event java.awt.event.KeyEvent/KEY_PRESSED)
       (when (contains? #{\1 \2 \3 \4 \q \w \e \r \a \s \d \f \z \x \c \v null-char} char)
-        (aset-char cpu/KEYDOWN 0 char)))
+        (reset! key char)))
     (when (= event java.awt.event.KeyEvent/KEY_RELEASED)
       (when (contains? #{\1 \2 \3 \4 \q \w \e \r \a \s \d \f \z \x \c \v null-char} char)
-        (aset-char cpu/KEYDOWN 0 0)))))
+        (reset! key null-char)))))
 
 (defn window []
   (let [frm (seesaw/frame :title "clj-chip8" :resizable? false :on-close :dispose

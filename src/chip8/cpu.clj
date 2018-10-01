@@ -360,7 +360,6 @@
 (defn opcode-7xkk
   "Adds the value kk to the value of register Vx, then stores the result in Vx."
   [arg1 arg2]
-  (when (= arg1 0xE) (println "Adding " arg2 " to register 0xE. Current reg value: " (read-reg arg1)))
   (write-reg arg1 (+ arg2 (read-reg arg1)))
   (inc-PC))
 
@@ -571,7 +570,6 @@
 (defn opcode-fx1e
   "The values of I and Vx are added, and the results are stored in I."
   [arg1]
-  (println "opcode-fx1e")
   (let [i (short->ushort (read-reg :I))
         result (+ i (byte->ubyte (read-reg arg1)))]
     (write-reg :I result)
@@ -585,7 +583,6 @@
   [arg1]
   (write-reg :I (* (byte->ubyte (read-reg arg1)) 5))
   (inc-PC))
-
 
 ;; Fx33 - LD B, Vx
 ;; Store BCD representation of Vx in memory locations I, I+1, and I+2.

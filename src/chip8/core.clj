@@ -22,7 +22,9 @@
 
 (defstate cpu-clock
   :start (future (while true
-                   (when (cpu/running?) (cpu/step))
+                   (when (cpu/running?)
+                     (aset-char cpu/KEYDOWN 0 @ui/key)
+                     (cpu/step))
                    (Thread/sleep (* (/ 1 720) 1000))))
   :stop (future-cancel cpu-clock))
 

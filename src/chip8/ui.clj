@@ -12,16 +12,17 @@
 (defonce key (atom 0))
 
 (defn read-keyboard
+  "Keyboard event listener. On press sets the key register in the CPU. On release clears the key
+  register."
   [key-event]
   (let [event (.getID key-event)
         char (.getKeyChar key-event)
         null-char java.lang.Character/MIN_VALUE]
-    (when (= event java.awt.event.KeyEvent/KEY_PRESSED)
-      (when (contains? #{\1 \2 \3 \4 \q \w \e \r \a \s \d \f \z \x \c \v null-char} char)
-        (reset! key char)))
-    (when (= event java.awt.event.KeyEvent/KEY_RELEASED)
-      (when (contains? #{\1 \2 \3 \4 \q \w \e \r \a \s \d \f \z \x \c \v null-char} char)
-        (reset! key null-char)))))
+    (when (contains? #{\1 \2 \3 \4 \q \w \e \r \a \s \d \f \z \x \c \v null-char} char)
+      (condp = event
+        java.awt.event.KeyEvent/KEY_PRESSED (reset! key char)
+        java.awt.event.KeyEvent/KEY_RELEASED (reset! key null-char)
+        true nil))))
 
 (defn window []
   (let [frm (seesaw/frame :title "clj-chip8" :resizable? false :on-close :dispose

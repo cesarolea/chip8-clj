@@ -360,7 +360,7 @@
 (defn opcode-7xkk
   "Adds the value kk to the value of register Vx, then stores the result in Vx."
   [arg1 arg2]
-  (println "opcode-7xkk")
+  (when (= arg1 0xE) (println "Adding " arg2 " to register 0xE. Current reg value: " (read-reg arg1)))
   (write-reg arg1 (+ arg2 (read-reg arg1)))
   (inc-PC))
 
@@ -433,7 +433,7 @@
   Then Vx is divided by 2."
   [arg1 arg2]
   (write-reg 0xF (bit-and (read-reg arg1) 1))
-  (write-reg arg1 (/ (byte->ubyte (read-reg arg1)) 2))
+  (write-reg arg1 (bit-shift-right (byte->ubyte (read-reg arg1)) 1))
   (inc-PC))
 
 ;; 8xy7 - SUBN Vx, Vy
@@ -458,7 +458,7 @@
   (if (> (bit-and (read-reg arg1) 2r10000000) 0)
     (write-reg 0xF 1)
     (write-reg 0xF 0))
-  (write-reg arg1 (* (read-reg arg1) 2))
+  (write-reg arg1 (bit-shift-left (read-reg arg1) 1))
   (inc-PC))
 
 ;; 9xy0 - SNE Vx, Vy
@@ -555,7 +555,6 @@
 (defn opcode-fx15
   "DT is set equal to the value of Vx."
   [arg1]
-  (println "Setting delay timer to " (read-reg arg1))
   (aset-byte DT 0 (read-reg arg1))
   (inc-PC))
 
@@ -595,10 +594,10 @@
   location in I, the tens digit at location I+1, and the ones digit at location I+2."
   [arg1]
   (let [num (byte->ubyte (read-reg arg1))
-        digits (num->digits num)]
-    (write-mem (+ (short->ushort (read-reg :I)) 2) (nth digits 2 0))
-    (write-mem (+ (short->ushort (read-reg :I)) 1) (nth digits 1 0))
-    (write-mem (short->ushort (read-reg :I)) (nth digits 0 0))
+        digits [(int (/ num 100)) (int (/ (mod num 100) 10)) (int (mod num 10))]]
+    (write-mem (+ (short->ushort (read-reg :I)) 0) (nth digits 0))
+    (write-mem (+ (short->ushort (read-reg :I)) 1) (nth digits 1))
+    (write-mem (+ (short->ushort (read-reg :I)) 2) (nth digits 2))
     (inc-PC)))
 
 ;; Fx55 - LD [I], Vx

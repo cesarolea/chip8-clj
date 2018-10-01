@@ -546,7 +546,7 @@
   "All execution stops until a key is pressed, then the value of that key is stored in Vx."
   [arg1]
   (when-not (= (aget KEYDOWN 0) java.lang.Character/MIN_VALUE)
-    (write-reg arg1 (aget KEYDOWN 0))
+    (write-reg arg1 (key-mapping (aget KEYDOWN 0)))
     (inc-PC)))
 
 ;; Fx15 - LD DT, Vx
@@ -660,6 +660,7 @@
                                       (bit-shift-right (bit-and opcode 0x00F0) 4))
            [\E  _ \9 \E] (opcode-ex9e (bit-shift-right (bit-and opcode 0x0F00) 8))
            [\E  _ \A \1] (opcode-exa1 (bit-shift-right (bit-and opcode 0x0F00) 8))
+           [\F  _ \0 \A] (opcode-fx0a (bit-shift-right (bit-and opcode 0x0F00) 8))
            [\F  _ \1 \E] (opcode-fx1e (bit-shift-right (bit-and opcode 0x0F00) 8))
            [\F  _ \3 \3] (opcode-fx33 (bit-shift-right (bit-and opcode 0x0F00) 8))
            [\F  _ \5 \5] (opcode-fx55 (bit-shift-right (bit-and opcode 0x0F00) 8))

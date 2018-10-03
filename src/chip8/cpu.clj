@@ -620,6 +620,50 @@
 ;; INTERPRETER
 ;;;;;;;;;;;;;;;
 
+(defn print-state
+  "Print current interpreter state"
+  []
+  (let [op-a (read-mem (aget PC 0))
+        op-b (read-mem (+ (aget PC 0) 1))
+        opcode (str (format "%02X" (bit-and 0xFF op-a)) (format "%02X" (bit-and 0xFF op-b)))
+        I (format "%04X" (read-reg :I))]
+    (println "PC: " opcode " I: " I)
+    (println "REGISTERS")
+    (println "V0: " (format "%02X" (read-reg 0))
+             " V4: " (format "%02X" (read-reg 4))
+             " V8: " (format "%02X" (read-reg 8))
+             " VC: " (format "%02X" (read-reg 0xC)))
+    (println "V1: " (format "%02X" (read-reg 1))
+             " V5: " (format "%02X" (read-reg 5))
+             " V9: " (format "%02X" (read-reg 9))
+             " VD: " (format "%02X" (read-reg 0xD)))
+    (println "V2: " (format "%02X" (read-reg 2))
+             " V6: " (format "%02X" (read-reg 6))
+             " VA: " (format "%02X" (read-reg 0xA))
+             " VE: " (format "%02X" (read-reg 0xD)))
+    (println "V3: " (format "%02X" (read-reg 3))
+             " V7: " (format "%02X" (read-reg 7))
+             " VB: " (format "%02X" (read-reg 0xB))
+             " VF: " (format "%02X" (read-reg 0xF)))
+    (println "STACK")
+    (println "SP: " (format "%02X" (aget SP 0)))
+    (println "0: " (format "%02X" (aget stack 0)))
+    (println "1: " (format "%02X" (aget stack 1)))
+    (println "2: " (format "%02X" (aget stack 2)))
+    (println "3: " (format "%02X" (aget stack 3)))
+    (println "4: " (format "%02X" (aget stack 4)))
+    (println "5: " (format "%02X" (aget stack 5)))
+    (println "6: " (format "%02X" (aget stack 6)))
+    (println "7: " (format "%02X" (aget stack 7)))
+    (println "8: " (format "%02X" (aget stack 8)))
+    (println "9: " (format "%02X" (aget stack 9)))
+    (println "A: " (format "%02X" (aget stack 0xA)))
+    (println "B: " (format "%02X" (aget stack 0xB)))
+    (println "C: " (format "%02X" (aget stack 0xC)))
+    (println "D: " (format "%02X" (aget stack 0xD)))
+    (println "E: " (format "%02X" (aget stack 0xE)))
+    (println "F: " (format "%02X" (aget stack 0xF)))))
+
 (defn evaluate
   [opcode]
   (let [opcode-match (vec (format "%04X" opcode))]
@@ -678,7 +722,8 @@
                                       (bit-and opcode 0x000F))
 
            ;; and last...
-           [\0  _  _  _] (opcode-0nnn))))
+           [\0  _  _  _] (opcode-0nnn)
+           :else (do (println "Opcode " opcode " not found.") (suspend) (print-state)))))
 
 (defn load-rom
   "Load ROM data into memory. ROM data is an array of bytes."
@@ -687,50 +732,6 @@
     (when (< iteration (count rom))
       (write-mem (+ 0x200 iteration) (aget rom iteration))
       (recur (inc iteration)))))
-
-(defn print-state
-  "Print current interpreter state"
-  []
-  (let [op-a (read-mem (aget PC 0))
-        op-b (read-mem (+ (aget PC 0) 1))
-        opcode (str (format "%02X" (bit-and 0xFF op-a)) (format "%02X" (bit-and 0xFF op-b)))
-        I (format "%04X" (read-reg :I))]
-    (println "PC: " opcode " I: " I)
-    (println "REGISTERS")
-    (println "V0: " (format "%02X" (read-reg 0))
-             " V4: " (format "%02X" (read-reg 4))
-             " V8: " (format "%02X" (read-reg 8))
-             " VC: " (format "%02X" (read-reg 0xC)))
-    (println "V1: " (format "%02X" (read-reg 1))
-             " V5: " (format "%02X" (read-reg 5))
-             " V9: " (format "%02X" (read-reg 9))
-             " VD: " (format "%02X" (read-reg 0xD)))
-    (println "V2: " (format "%02X" (read-reg 2))
-             " V6: " (format "%02X" (read-reg 6))
-             " VA: " (format "%02X" (read-reg 0xA))
-             " VE: " (format "%02X" (read-reg 0xD)))
-    (println "V3: " (format "%02X" (read-reg 3))
-             " V7: " (format "%02X" (read-reg 7))
-             " VB: " (format "%02X" (read-reg 0xB))
-             " VF: " (format "%02X" (read-reg 0xF)))
-    (println "STACK")
-    (println "SP: " (format "%02X" (aget SP 0)))
-    (println "0: " (format "%02X" (aget stack 0)))
-    (println "1: " (format "%02X" (aget stack 1)))
-    (println "2: " (format "%02X" (aget stack 2)))
-    (println "3: " (format "%02X" (aget stack 3)))
-    (println "4: " (format "%02X" (aget stack 4)))
-    (println "5: " (format "%02X" (aget stack 5)))
-    (println "6: " (format "%02X" (aget stack 6)))
-    (println "7: " (format "%02X" (aget stack 7)))
-    (println "8: " (format "%02X" (aget stack 8)))
-    (println "9: " (format "%02X" (aget stack 9)))
-    (println "A: " (format "%02X" (aget stack 0xA)))
-    (println "B: " (format "%02X" (aget stack 0xB)))
-    (println "C: " (format "%02X" (aget stack 0xC)))
-    (println "D: " (format "%02X" (aget stack 0xD)))
-    (println "E: " (format "%02X" (aget stack 0xE)))
-    (println "F: " (format "%02X" (aget stack 0xF)))))
 
 (defn step
   "Evaluate a single instruction"

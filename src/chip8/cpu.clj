@@ -421,7 +421,7 @@
   (let [vx (byte->ubyte (read-reg arg1))
         vy (byte->ubyte (read-reg arg2))
         result (- vx vy)]
-    (write-reg 0xF (if (> vx vy) 1 0))
+    (write-reg 0xF (if (>= vx vy) 1 0))
     (write-reg arg1 result)
     (inc-PC)))
 
@@ -444,7 +444,7 @@
   (let [vx (byte->ubyte (read-reg arg1))
         vy (byte->ubyte (read-reg arg2))
         result (- vy vx)]
-    (write-reg 0xF (if (> vy vx) 1 0))
+    (write-reg 0xF (if (>= vy vx) 1 0))
     (write-reg arg1 result)
     (inc-PC)))
 

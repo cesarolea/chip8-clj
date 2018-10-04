@@ -203,18 +203,34 @@
     (if v2
       (bit-or v1 v2) v1)))
 
+(defn read-fb2
+  "Read a sprite (8 bits) from the framebuffer"
+  [x y]
+  (let [row (get framebuffer y)
+        bits-row (flatten
+                  (map #(bits (byte->ubyte %) 8) (into [] row)))
+        overflow-x (> x (- 64 8))]
+    (cond
+      (= x 0) (into [] (take 8 bits-row))
+      (not overflow-x) (into [] (->> bits-row (drop x) (take 8)))
+      overflow-x (into []
+                       (flatten
+                        (conj
+                         (into [] (->> bits-row (drop x) (take (- 64 x))))
+                         (into [] (->> bits-row (take (- 8 (- 64 x)))))))))))
+
 (defn check-set-vf!
   "Checks if XORing sprite,framebuffer causes any pixel from the framebuffer, identified by
   coordinates X Y, to be turned off (set from 1 to 0). If true, VF is set to 1."
   [x y sprite]
-  (let [fb-val (read-fb x y)]
+  (let [fb-val (read-fb2 x y)]
     (when (some true?
                 (map (fn [bit-sprite bit-fb]
                        ;; check if bit-sprite causes bit-fb to be set to 0 when applied xor
                        ;; if true, set VF to 1
                        (and (= bit-fb 1)  ;; if fb bit was 1
                             (= (bit-xor bit-sprite bit-fb) 0) ;; and is turned off
-                            )) (bits sprite 8) (bits fb-val 8)))
+                            )) (bits sprite 8) fb-val))
       (write-reg 0xF 1))))
 
 (defn write-fb
@@ -645,24 +661,26 @@
              " V7: " (format "%02X" (read-reg 7))
              " VB: " (format "%02X" (read-reg 0xB))
              " VF: " (format "%02X" (read-reg 0xF)))
-    (println "STACK")
-    (println "SP: " (format "%02X" (aget SP 0)))
-    (println "0: " (format "%02X" (aget stack 0)))
-    (println "1: " (format "%02X" (aget stack 1)))
-    (println "2: " (format "%02X" (aget stack 2)))
-    (println "3: " (format "%02X" (aget stack 3)))
-    (println "4: " (format "%02X" (aget stack 4)))
-    (println "5: " (format "%02X" (aget stack 5)))
-    (println "6: " (format "%02X" (aget stack 6)))
-    (println "7: " (format "%02X" (aget stack 7)))
-    (println "8: " (format "%02X" (aget stack 8)))
-    (println "9: " (format "%02X" (aget stack 9)))
-    (println "A: " (format "%02X" (aget stack 0xA)))
-    (println "B: " (format "%02X" (aget stack 0xB)))
-    (println "C: " (format "%02X" (aget stack 0xC)))
-    (println "D: " (format "%02X" (aget stack 0xD)))
-    (println "E: " (format "%02X" (aget stack 0xE)))
-    (println "F: " (format "%02X" (aget stack 0xF)))))
+    (println)
+    ;; (println "STACK")
+    ;; (println "SP: " (format "%02X" (aget SP 0)))
+    ;; (println "0: " (format "%02X" (aget stack 0)))
+    ;; (println "1: " (format "%02X" (aget stack 1)))
+    ;; (println "2: " (format "%02X" (aget stack 2)))
+    ;; (println "3: " (format "%02X" (aget stack 3)))
+    ;; (println "4: " (format "%02X" (aget stack 4)))
+    ;; (println "5: " (format "%02X" (aget stack 5)))
+    ;; (println "6: " (format "%02X" (aget stack 6)))
+    ;; (println "7: " (format "%02X" (aget stack 7)))
+    ;; (println "8: " (format "%02X" (aget stack 8)))
+    ;; (println "9: " (format "%02X" (aget stack 9)))
+    ;; (println "A: " (format "%02X" (aget stack 0xA)))
+    ;; (println "B: " (format "%02X" (aget stack 0xB)))
+    ;; (println "C: " (format "%02X" (aget stack 0xC)))
+    ;; (println "D: " (format "%02X" (aget stack 0xD)))
+    ;; (println "E: " (format "%02X" (aget stack 0xE)))
+    ;; (println "F: " (format "%02X" (aget stack 0xF)))
+    ))
 
 (defn evaluate
   [opcode]

@@ -36,33 +36,29 @@
                                                                                  (seesaw/width c)
                                                                                  (seesaw/height c))
                                                                 (graphics/style :background :black))
-                                                 (.drawImage g img 0 0 nil))))
+                                                 (.drawImage g img 0 0 nil)
+                                                 (.repaint c))
+
+                                    (loop [y 0]
+                                      (when (<= y 31)
+                                        (let [sprite-array (aget cpu/framebuffer y)
+                                              row (flatten
+                                                   (reduce (fn [acc itm]
+                                                             (conj acc (into [] (cpu/bits itm 8))))
+                                                           [] (into [] sprite-array)))
+                                              sub-image (.getSubimage img 0 (* y 8) (* 64 8) 8)
+                                              sub-image-g (.getGraphics sub-image)]
+                                          (loop [x 0]
+                                            (when (<= x 63)
+                                              (let [frame-pixel (nth row x)]
+                                                (when (= frame-pixel 1)
+                                                  (graphics/draw sub-image-g
+                                                                 (graphics/rect (* x 8) 0 8 8)
+                                                                 (graphics/style :background :grey))
+                                                  (.drawImage sub-image-g sub-image 0 0 nil)))
+                                              (recur (inc x)))))
+                                        (recur (inc y))))))
     (seesaw/config! frm :content canvas)
     (-> frm seesaw/pack! seesaw/show!)))
 
 (defstate screen :start (window) :stop (.dispose screen))
-
-(defn draw-screen
-  [framebuffer]
-  ;; the framebuffer is an array of byte arrays. Each byte array has 8 bytes, meaning a single
-  ;; element of the framebuffer array has a full row
-  (loop [y 0]
-    (when (<= y 31)
-      (let [sprite-array (aget framebuffer y)
-            row (flatten
-                 (reduce (fn [acc itm]
-                           (conj acc (into [] (cpu/bits itm 8))))
-                         [] (into [] sprite-array)))
-            sub-image (.getSubimage img 0 (* y 8) (* 64 8) 8)
-            sub-image-g (.getGraphics sub-image)]
-        (loop [x 0]
-          (when (<= x 63)
-            (let [screen-pixel (if (= (.getRGB sub-image (* x 8) 0) 0) 0 1)
-                  frame-pixel (nth row x)]
-              (graphics/draw sub-image-g
-                             (graphics/rect (* x 8) 0 8 8)
-                             (graphics/style :background (if (= (nth row x) 1) :grey :black)))
-              (.drawImage sub-image-g sub-image 0 0 nil))
-            (recur (inc x)))))
-      (recur (inc y))))
-  (.repaint screen))

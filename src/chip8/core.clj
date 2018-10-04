@@ -16,7 +16,7 @@
   [path]
   (cpu/load-rom (IOUtils/toByteArray (io/input-stream path))))
 
-(defstate render-loop
+#_(defstate render-loop
   :start (future (while true
                    (when (cpu/running?) (ui/draw-screen cpu/framebuffer))))
   :stop (future-cancel render-loop))
@@ -25,7 +25,8 @@
   :start (future (while true
                    (when (cpu/running?)
                      (aset-char cpu/KEYDOWN 0 @ui/key)
-                     (cpu/step))
+                     (cpu/step)
+                     (javax.swing.SwingUtilities/invokeLater #(.repaint ui/screen)))
                    (Thread/sleep (* (/ 1 (:cpu-frequency @options)) 1000))))
   :stop (future-cancel cpu-clock))
 

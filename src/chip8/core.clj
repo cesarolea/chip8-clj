@@ -8,6 +8,7 @@
   (:gen-class))
 
 (defonce sound-future (atom nil))
+(defonce options (atom {:cpu-frequency 720 :scaling 8 :note 60}))
 (defonce cpu-frequency (atom 540))
 
 (defn read-rom-file
@@ -25,7 +26,7 @@
                    (when (cpu/running?)
                      (aset-char cpu/KEYDOWN 0 @ui/key)
                      (cpu/step))
-                   (Thread/sleep (* (/ 1 @cpu-frequency) 1000))))
+                   (Thread/sleep (* (/ 1 (:cpu-frequency @options)) 1000))))
   :stop (future-cancel cpu-clock))
 
 (defstate sound-loop
@@ -35,9 +36,10 @@
                      (when (or (and (future? @sound-future)
                                     (future-done? @sound-future))
                                (not (future? @sound-future)))
-                       (reset! sound-future (future (sound/play 60 (* (cpu/byte->ubyte (aget cpu/ST 0))
-                                                                      (/ 1 60)
-                                                                      1000)))))
+                       (reset! sound-future (future (sound/play (:note @options)
+                                                                (* (cpu/byte->ubyte (aget cpu/ST 0))
+                                                                   (/ 1 60)
+                                                                   1000)))))
                      (cpu/dec-reg cpu/ST))
                    (Thread/sleep (* (/ 1 60) 1000))))
   :stop (future-cancel sound-loop))

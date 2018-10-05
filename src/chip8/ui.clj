@@ -60,7 +60,7 @@
                                                 (when (= 1 frame-pixel)
                                                   (graphics/draw sub-image-g
                                                                  (graphics/rect (* x 8) 0 8 8)
-                                                                 (graphics/style :background (if (= 1 frame-pixel) :grey :black)))
+                                                                 (graphics/style :background :grey))
                                                   (.drawImage sub-image-g sub-image 0 0 nil)))
                                               (recur (inc x)))))
                                         (recur (inc y))))))

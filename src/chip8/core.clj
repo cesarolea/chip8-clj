@@ -9,17 +9,11 @@
 
 (defonce sound-future (atom nil))
 (defonce options (atom {:cpu-frequency 720 :scaling 8 :note 60}))
-(defonce cpu-frequency (atom 540))
 
 (defn read-rom-file
   "Reads a rom file from path and loads ROM into memory"
   [path]
   (cpu/load-rom (IOUtils/toByteArray (io/input-stream path))))
-
-#_(defstate render-loop
-  :start (future (while true
-                   (when (cpu/running?) (ui/draw-screen cpu/framebuffer))))
-  :stop (future-cancel render-loop))
 
 (defstate cpu-clock
   :start (future (while true

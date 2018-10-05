@@ -48,13 +48,19 @@
                                                            [] (into [] sprite-array)))
                                               sub-image (.getSubimage img 0 (* y 8) (* 64 8) 8)
                                               sub-image-g (.getGraphics sub-image)]
+
+                                          (graphics/draw sub-image-g
+                                                                 (graphics/rect 0 0 (* 64 8) 8)
+                                                                 (graphics/style :background :black))
+                                          (.drawImage sub-image-g sub-image 0 0 nil)
+
                                           (loop [x 0]
                                             (when (<= x 63)
                                               (let [frame-pixel (nth row x)]
-                                                (when (= frame-pixel 1)
+                                                (when (= 1 frame-pixel)
                                                   (graphics/draw sub-image-g
                                                                  (graphics/rect (* x 8) 0 8 8)
-                                                                 (graphics/style :background :grey))
+                                                                 (graphics/style :background (if (= 1 frame-pixel) :grey :black)))
                                                   (.drawImage sub-image-g sub-image 0 0 nil)))
                                               (recur (inc x)))))
                                         (recur (inc y))))))

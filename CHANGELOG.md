@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 	- Options namespace to handle emulation options (scaling, cpu frequency, sound tone, etc)
 	- UI to load roms and control emulation (start, stop, reset)
+	- Improve rendering speed, reduces flicker.
 
 ## [0.1.1] - 2018-10-04
 	Initial version!

@@ -1,14 +1,15 @@
 (ns chip8.core
   (:require [clojure.java.io :as io]
-            [chip8.cpu :as cpu]
-            [chip8.ui :as ui]
-            [chip8.sound :as sound]
+            [chip8
+             [cpu :as cpu]
+             [ui :as ui]
+             [sound :as sound]
+             [options :as options]]
             [mount.core :refer [defstate start stop]])
   (:import [org.apache.commons.io IOUtils])
   (:gen-class))
 
 (defonce sound-future (atom nil))
-(defonce options (atom {:cpu-frequency 720 :scaling 8 :note 60}))
 
 (defn read-rom-file
   "Reads a rom file from path and loads ROM into memory"
@@ -21,7 +22,7 @@
                      (aset-char cpu/KEYDOWN 0 @ui/key)
                      (cpu/step)
                      (javax.swing.SwingUtilities/invokeLater #(.repaint ui/screen)))
-                   (Thread/sleep (* (/ 1 (:cpu-frequency @options)) 1000))))
+                   (Thread/sleep (* (/ 1 (options/get-option :cpu-frequency)) 1000))))
   :stop (future-cancel cpu-clock))
 
 (defstate sound-loop
@@ -31,7 +32,7 @@
                      (when (or (and (future? @sound-future)
                                     (future-done? @sound-future))
                                (not (future? @sound-future)))
-                       (reset! sound-future (future (sound/play (:note @options)
+                       (reset! sound-future (future (sound/play (options/get-option :note)
                                                                 (* (cpu/byte->ubyte (aget cpu/ST 0))
                                                                    (/ 1 60)
                                                                    1000)))))

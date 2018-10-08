@@ -1,14 +1,16 @@
 (ns chip8.ui
-  (:require [chip8.cpu :as cpu]
+  (:require [chip8
+             [cpu :as cpu]
+             [options :as options]]
             [mount.core :refer [defstate]]
-            [seesaw.core :as seesaw]
-            [seesaw.graphics :as graphics]
-            [seesaw.color :refer [to-color]]
-            [seesaw.dev :refer [show-events]])
+            [seesaw
+             [core :as seesaw]
+             [graphics :as graphics]
+             [color :refer [to-color]]
+             [dev :refer [show-events]]])
   (:import [java.awt.image BufferedImage]
            [java.awt.Color]))
 
-(defonce img (graphics/buffered-image (* 64 8) (* 32 8)))
 (defonce key (atom 0))
 
 (defn read-keyboard
@@ -25,13 +27,15 @@
         true nil))))
 
 (defn window []
-  (let [frm (seesaw/frame :title "chip8-clj" :resizable? false :on-close :dispose
+  (let [img (graphics/buffered-image (* 64 (options/get-option :scaling))
+                                     (* 32 (options/get-option :scaling)))
+        frm (seesaw/frame :title "chip8-clj" :resizable? false :on-close :dispose
                           :listen [:key-pressed read-keyboard :key-released read-keyboard])
         canvas (seesaw/canvas)
         g2d (.getGraphics img)]
     (seesaw/native!)
     (graphics/anti-alias g2d)
-    (seesaw/config! canvas :size [(* 64 8) :by (* 32 8)])
+    (seesaw/config! canvas :size [(* 64 (options/get-option :scaling)) :by (* 32 (options/get-option :scaling))])
     (seesaw/config! canvas :paint (fn [c g] (try (graphics/draw g (graphics/rect 0 0
                                                                                  (seesaw/width c)
                                                                                  (seesaw/height c))
@@ -46,11 +50,19 @@
                                                    (reduce (fn [acc itm]
                                                              (conj acc (into [] (cpu/bits itm 8))))
                                                            [] (into [] sprite-array)))
-                                              sub-image (.getSubimage img 0 (* y 8) (* 64 8) 8)
+
+                                              ;; gets the subimage of the current row only
+                                              sub-image (.getSubimage img
+                                                                      0                                 ;; x coord
+                                                                      (* y (options/get-option :scaling))  ;; y coord
+                                                                      (* 64 (options/get-option :scaling)) ;; witdth
+                                                                      (options/get-option :scaling))       ;; height
                                               sub-image-g (.getGraphics sub-image)]
 
                                           (graphics/draw sub-image-g
-                                                                 (graphics/rect 0 0 (* 64 8) 8)
+                                                                 (graphics/rect 0 0
+                                                                                (* 64 (options/get-option :scaling))
+                                                                                (options/get-option :scaling))
                                                                  (graphics/style :background :black))
                                           (.drawImage sub-image-g sub-image 0 0 nil)
 
@@ -59,7 +71,9 @@
                                               (let [frame-pixel (nth row x)]
                                                 (when (= 1 frame-pixel)
                                                   (graphics/draw sub-image-g
-                                                                 (graphics/rect (* x 8) 0 8 8)
+                                                                 (graphics/rect (* x (options/get-option :scaling)) 0
+                                                                                (options/get-option :scaling)
+                                                                                (options/get-option :scaling))
                                                                  (graphics/style :background (if (= 1 frame-pixel) :grey :black)))
                                                   (.drawImage sub-image-g sub-image 0 0 nil)))
                                               (recur (inc x)))))

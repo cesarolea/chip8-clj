@@ -2,10 +2,13 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
 ## [Unreleased]
-### Added
+	### Added
 	- Options namespace to handle emulation options (scaling, cpu frequency, sound tone, etc)
 	- UI to load roms and control emulation (start, stop, reset)
-	- Improve rendering speed, reduces flicker.
+
+	### Changed
+	- Frame name is now "chip8-clj"
+	- Rendering is changed. Now prior to rendering a row, the row is "erased" to the background color leaving the renderer to only paint the "on" pixels. Improves rendering speed and reduces flicker.
 
 ## [0.1.1] - 2018-10-04
 	Initial version!

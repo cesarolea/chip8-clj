@@ -74,7 +74,7 @@
                                                                  (graphics/rect (* x (options/get-option :scaling)) 0
                                                                                 (options/get-option :scaling)
                                                                                 (options/get-option :scaling))
-                                                                 (graphics/style :background (if (= 1 frame-pixel) :grey :black)))
+                                                                 (graphics/style :background :grey))
                                                   (.drawImage sub-image-g sub-image 0 0 nil)))
                                               (recur (inc x)))))
                                         (recur (inc y))))))

@@ -25,7 +25,7 @@
         true nil))))
 
 (defn window []
-  (let [frm (seesaw/frame :title "clj-chip8" :resizable? false :on-close :dispose
+  (let [frm (seesaw/frame :title "chip8-clj" :resizable? false :on-close :dispose
                           :listen [:key-pressed read-keyboard :key-released read-keyboard])
         canvas (seesaw/canvas)
         g2d (.getGraphics img)]

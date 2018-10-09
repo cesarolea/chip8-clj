@@ -30,7 +30,8 @@
   (let [img (graphics/buffered-image (* 64 (options/get-option :scaling))
                                      (* 32 (options/get-option :scaling)))
         frm (seesaw/frame :title "chip8-clj" :resizable? false :on-close :dispose
-                          :listen [:key-pressed read-keyboard :key-released read-keyboard])
+                          :listen [:key-pressed read-keyboard :key-released read-keyboard
+                                   :window-closed (fn [event] (.dispose (.getWindow event)))])
         canvas (seesaw/canvas)
         g2d (.getGraphics img)]
     (seesaw/native!)

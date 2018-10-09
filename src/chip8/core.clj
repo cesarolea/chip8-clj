@@ -51,6 +51,8 @@
 (defn -main
   [& args]
   (cpu/reset)
+  (read-rom-file "resources/horns.ch8")
+  (cpu/resume)
   (start)
   (.addShutdownHook (Runtime/getRuntime)
                     (Thread. #(stop))))

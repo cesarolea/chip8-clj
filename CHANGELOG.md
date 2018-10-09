@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file. This change
 	### Changed
 	- Frame name is now "chip8-clj"
 	- Rendering is changed. Now prior to rendering a row, the row is "erased" to the background color leaving the renderer to only paint the "on" pixels. Improves rendering speed and reduces flicker.
+	- Display logo on startup.
 
 ## [0.1.1] - 2018-10-04
 	Initial version!

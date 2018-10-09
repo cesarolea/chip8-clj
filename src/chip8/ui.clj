@@ -31,10 +31,12 @@
                                      (* 32 (options/get-option :scaling)))
         frm (seesaw/frame :title "chip8-clj" :resizable? false :on-close :dispose
                           :listen [:key-pressed read-keyboard :key-released read-keyboard
-                                   :window-closed (fn [event] (.dispose (.getWindow event)))])
+                                   :window-closed (fn [event] (.dispose (.getWindow event)))]
+                          :menubar (seesaw/menubar :items
+                                                   [(seesaw/menu :text "File" :items [])
+                                                    (seesaw/menu :text "Edit" :items [])]))
         canvas (seesaw/canvas)
         g2d (.getGraphics img)]
-    (seesaw/native!)
     (graphics/anti-alias g2d)
     (seesaw/config! canvas :size [(* 64 (options/get-option :scaling)) :by (* 32 (options/get-option :scaling))])
     (seesaw/config! canvas :paint (fn [c g] (try (graphics/draw g (graphics/rect 0 0
@@ -82,4 +84,4 @@
     (seesaw/config! frm :content canvas)
     (-> frm seesaw/pack! seesaw/show!)))
 
-(defstate screen :start (window) :stop (.dispose screen))
+(defstate screen :start (do (seesaw/native!) (window)) :stop (.dispose screen))

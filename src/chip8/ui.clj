@@ -42,8 +42,6 @@
                       :name "Load ROM..."
                       :tip "Opens an Open File dialog to select a ROM file"))
 
-(def pause-cpu-action )
-
 (defn read-keyboard
   "Keyboard event listener. On press sets the key register in the CPU. On release clears the key
   register."
@@ -60,28 +58,37 @@
 (defn window []
   (let [img (graphics/buffered-image (* 64 (options/get-option :scaling))
                                      (* 32 (options/get-option :scaling)))
-        frm (seesaw/frame :title "chip8-clj" :resizable? false :on-close :dispose
+        frm (seesaw/frame :title "chip8-clj ►" :resizable? false :on-close :dispose
                           :listen [:key-pressed read-keyboard :key-released read-keyboard
-                                   :window-closed (fn [event] (.dispose (.getWindow event)))]
-                          :menubar (seesaw/menubar :items
-                                                   [(seesaw/menu :text "File"
-                                                                 :items [load-rom-action exit-action])
-                                                    (seesaw/menu :text "Control"
-                                                                 :items [(seesaw/action :handler (fn [e] (cpu/suspend))
-                                                                                        :name "Pause" :tip "Suspends emulation")
-                                                                         (seesaw/action :handler (fn [e] (cpu/resume))
-                                                                                        :name "Play" :tip "Resumes emulation")
-                                                                         (seesaw/action :handler (fn [e]
-                                                                                                   (cpu/reset)
-                                                                                                   (-> "resources/horns.ch8"
-                                                                                                       io/input-stream
-                                                                                                       IOUtils/toByteArray
-                                                                                                       cpu/load-rom)
-                                                                                                   (cpu/resume))
-                                                                                        :name "Reset" :tip "Reset emulation")])]))
+                                   :window-closed (fn [event] (.dispose (.getWindow event)))])
         canvas (seesaw/canvas)
         g2d (.getGraphics img)]
     (graphics/anti-alias g2d)
+    (seesaw/config! frm :menubar
+                    (seesaw/menubar
+                     :items
+                     [(seesaw/menu :text "File"
+                                   :items [load-rom-action exit-action])
+                      (seesaw/menu :text "Control"
+                                   :items [(seesaw/action :handler (fn [e]
+                                                                     (cpu/suspend)
+                                                                     (seesaw/config! frm :title "chip8-clj ❙❙"))
+                                                          :name "Pause" :tip "Suspends emulation")
+                                           (seesaw/action :handler (fn [e]
+                                                                     (cpu/resume)
+                                                                     (seesaw/config! frm :title "chip8-clj ►"))
+                                                          :name "Play" :tip "Resumes emulation")
+                                           (seesaw/action :handler (fn [e]
+                                                                     (cpu/reset)
+                                                                     (-> "resources/horns.ch8"
+                                                                         io/input-stream
+                                                                         IOUtils/toByteArray
+                                                                         cpu/load-rom)
+                                                                     (cpu/resume)
+                                                                     (seesaw/config! frm :title "chip8-clj ►"))
+                                                          :name "Reset" :tip "Reset emulation")])
+                      (seesaw/menu :text "Options" :items [;; color chooser ;; scaling ;; frequency
+                                                           ])]))
     (seesaw/config! canvas :size [(* 64 (options/get-option :scaling)) :by (* 32 (options/get-option :scaling))])
     (seesaw/config! canvas :paint (fn [c g] (try (graphics/draw g (graphics/rect 0 0
                                                                                  (seesaw/width c)

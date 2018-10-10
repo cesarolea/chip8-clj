@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file. This change
 	### Added
 	- Options namespace to handle emulation options (scaling, cpu frequency, sound tone, etc)
 	- UI to load roms and control emulation (start, stop, reset)
+	- Added a menu to load roms and exit emulator.
+	- Added menu options to play, pause and reset emulator.
 
 	### Changed
 	- Frame name is now "chip8-clj"

@@ -42,6 +42,8 @@
                       :name "Load ROM..."
                       :tip "Opens an Open File dialog to select a ROM file"))
 
+(def pause-cpu-action )
+
 (defn read-keyboard
   "Keyboard event listener. On press sets the key register in the CPU. On release clears the key
   register."
@@ -65,10 +67,18 @@
                                                    [(seesaw/menu :text "File"
                                                                  :items [load-rom-action exit-action])
                                                     (seesaw/menu :text "Control"
-                                                                 :items [(seesaw/menu :text "Pause" :items [])
-                                                                         (seesaw/menu :text "Resume" :items [])
-                                                                         (seesaw/menu :text "Restart" :items [])
-                                                                         (seesaw/menu :text "Reset" :items [])])]))
+                                                                 :items [(seesaw/action :handler (fn [e] (cpu/suspend))
+                                                                                        :name "Pause" :tip "Suspends emulation")
+                                                                         (seesaw/action :handler (fn [e] (cpu/resume))
+                                                                                        :name "Play" :tip "Resumes emulation")
+                                                                         (seesaw/action :handler (fn [e]
+                                                                                                   (cpu/reset)
+                                                                                                   (-> "resources/horns.ch8"
+                                                                                                       io/input-stream
+                                                                                                       IOUtils/toByteArray
+                                                                                                       cpu/load-rom)
+                                                                                                   (cpu/resume))
+                                                                                        :name "Reset" :tip "Reset emulation")])]))
         canvas (seesaw/canvas)
         g2d (.getGraphics img)]
     (graphics/anti-alias g2d)

@@ -13,6 +13,11 @@
 
 (defonce key (atom 0))
 
+(def exit-action (seesaw/action
+                  :handler (fn [e] (System/exit 0))
+                  :name "Exit"
+                  :tip "Exits chip8-clj"))
+
 (defn read-keyboard
   "Keyboard event listener. On press sets the key register in the CPU. On release clears the key
   register."
@@ -33,8 +38,12 @@
                           :listen [:key-pressed read-keyboard :key-released read-keyboard
                                    :window-closed (fn [event] (.dispose (.getWindow event)))]
                           :menubar (seesaw/menubar :items
-                                                   [(seesaw/menu :text "File" :items [])
-                                                    (seesaw/menu :text "Edit" :items [])]))
+                                                   [(seesaw/menu :text "File" :items [(seesaw/menu :text "Load ROM..." :items [])
+                                                                                      exit-action])
+                                                    (seesaw/menu :text "Control" :items [(seesaw/menu :text "Pause" :items [])
+                                                                                         (seesaw/menu :text "Resume" :items [])
+                                                                                         (seesaw/menu :text "Restart" :items [])
+                                                                                         (seesaw/menu :text "Reset" :items [])])]))
         canvas (seesaw/canvas)
         g2d (.getGraphics img)]
     (graphics/anti-alias g2d)

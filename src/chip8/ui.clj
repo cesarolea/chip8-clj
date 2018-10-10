@@ -1,5 +1,6 @@
 (ns chip8.ui
-  (:require [chip8
+  (:require [clojure.java.io :as io]
+            [chip8
              [cpu :as cpu]
              [options :as options]]
             [mount.core :refer [defstate stop]]
@@ -7,9 +8,11 @@
              [core :as seesaw]
              [graphics :as graphics]
              [color :refer [to-color]]
-             [dev :refer [show-events]]])
+             [dev :refer [show-events]]
+             [chooser :as chooser]])
   (:import [java.awt.image BufferedImage]
-           [java.awt.Color]))
+           [java.awt.Color]
+           [org.apache.commons.io IOUtils]))
 
 (defonce key (atom 0))
 
@@ -21,6 +24,23 @@
                              (System/exit 0))
                   :name "Exit"
                   :tip "Exits chip8-clj"))
+
+(def load-rom-action (seesaw/action
+                      :handler (fn [e]
+                                 (chooser/choose-file :type :open
+                                                      :dir "~"
+                                                      :multi? false
+                                                      :selection-mode :files-only
+                                                      :success-fn (fn [event rom]
+                                                                    (cpu/reset)
+                                                                    (-> rom
+                                                                        .getAbsolutePath
+                                                                        io/input-stream
+                                                                        IOUtils/toByteArray
+                                                                        cpu/load-rom)
+                                                                    (cpu/resume))))
+                      :name "Load ROM..."
+                      :tip "Opens an Open File dialog to select a ROM file"))
 
 (defn read-keyboard
   "Keyboard event listener. On press sets the key register in the CPU. On release clears the key
@@ -42,12 +62,13 @@
                           :listen [:key-pressed read-keyboard :key-released read-keyboard
                                    :window-closed (fn [event] (.dispose (.getWindow event)))]
                           :menubar (seesaw/menubar :items
-                                                   [(seesaw/menu :text "File" :items [(seesaw/menu :text "Load ROM..." :items [])
-                                                                                      exit-action])
-                                                    (seesaw/menu :text "Control" :items [(seesaw/menu :text "Pause" :items [])
-                                                                                         (seesaw/menu :text "Resume" :items [])
-                                                                                         (seesaw/menu :text "Restart" :items [])
-                                                                                         (seesaw/menu :text "Reset" :items [])])]))
+                                                   [(seesaw/menu :text "File"
+                                                                 :items [load-rom-action exit-action])
+                                                    (seesaw/menu :text "Control"
+                                                                 :items [(seesaw/menu :text "Pause" :items [])
+                                                                         (seesaw/menu :text "Resume" :items [])
+                                                                         (seesaw/menu :text "Restart" :items [])
+                                                                         (seesaw/menu :text "Reset" :items [])])]))
         canvas (seesaw/canvas)
         g2d (.getGraphics img)]
     (graphics/anti-alias g2d)

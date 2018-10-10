@@ -2,7 +2,7 @@
   (:require [chip8
              [cpu :as cpu]
              [options :as options]]
-            [mount.core :refer [defstate]]
+            [mount.core :refer [defstate stop]]
             [seesaw
              [core :as seesaw]
              [graphics :as graphics]
@@ -14,7 +14,11 @@
 (defonce key (atom 0))
 
 (def exit-action (seesaw/action
-                  :handler (fn [e] (System/exit 0))
+                  :handler (fn [e]
+                             (println "Exiting...")
+                             (cpu/suspend)
+                             (stop)
+                             (System/exit 0))
                   :name "Exit"
                   :tip "Exits chip8-clj"))
 

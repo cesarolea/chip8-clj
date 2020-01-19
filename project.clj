@@ -11,5 +11,4 @@
   :main ^:skip-aot chip8.core
   :target-path "target/%s"
   :pedantic? true
-  :jvm-opts ["-Xdock:name=chip8-clj"]
   :profiles {:uberjar {:aot :all}})
